@@ -1,0 +1,248 @@
+
+Cochran-Armitage Algorithm
+
+The CATT is applied when the data takes the form of a 2 × k contingency table. The number of rows (2) indicates the outcome of an experiment, and the number of columns indicates a variable number (k) of experiments. For example, if k = 3, then the contingency table will be as shown in Table 20-1.
+Table 20-1. 2 × 3 contingency table Group 	B = 1 	B = 2 	B = 3
+A = 1 	N11 	N12 	N13
+A = 2 	N21 	N22 	N23
+
+This contingency table can be completed with the marginal totals of the two variables, as shown in Table 20-2.
+Table 20-2. 2 × 3 contingency table with marginal totals Group 	B = 1 	B = 2 	B = 3 	Sum
+A = 1 	N11 	N12 	N13 	R1
+A = 2 	N21 	N22 	N23 	R2
+Sum 	C1 	C2 	C3 	N
+
+Where:
+
+    R1 = N11 + N12 + N13
+
+    R2 = N21 + N22 + N23
+
+    C1 = N11 + N21
+
+    C2 = N12 + N22
+
+    C3 = N13 + N23
+
+    N = R1 + R2 = C1 + C2 + C3 = N11 + N12 + N13 + N21 + N22 + N23
+
+The trend test statistic is:
+upper T identical-to sigma-summation Underscript i equals 1 Overscript k Endscripts w Subscript i Baseline left-parenthesis upper N Subscript 1 i Baseline upper R 2 minus upper N Subscript 2 i Baseline upper R 1 right-parenthesis
+
+where wi is weight. In using CATT for alleles of germline data, we can apply three different tests based on the value of the weight:
+
+    weight = {0, 1, 2}: for additive
+    weight = {1, 1, 0}: for dominant
+    weight = {0, 1, 1}: for recessive
+
+The hypothesis of no association (known as the null hypothesis) can be expressed as:
+
+Pr(A = 1|B = 1) = ... = Pr(A = 1|B = k)
+
+Assuming that the null hypothesis holds, then using iterated expectation we can write:
+
+E(T) = E(E(T |R1, R2)) = E(0) = 0
+
+Given two discrete random variables X and Y, we can define the conditional expectation as:
+normal upper E left-bracket upper X vertical-bar upper Y equals y right-bracket equals sigma-summation Underscript x Endscripts x dot normal upper P left-parenthesis upper X equals x vertical-bar upper Y equals y right-parenthesis
+
+Now, using all these definitions and formulas, we are ready to write our Cochran-Armitage algorithm in Java (Example 20-1). One major goal of the CATT is to compute the p-value (a probability value between 0.00 and 1.00). Using the algorithm defined in Wikipedia, we implement the CATT as a POJO class, CochranArmitage. This Java class will be used in our MapReduce solution.
+Example 20-1. Cochran-Armitage algorithm
+
+
+ 1 import java.io.BufferedReader;
+ 2 import java.io.BufferedWriter;
+ 3 import java.io.FileReader;
+ 4 import java.io.FileWriter;
+ 5 import java.io.IOException;
+ 6
+ 7 import org.apache.log4j.Logger;
+ 8 import org.apache.commons.math3.distribution.NormalDistribution;
+ 9
+10 /**
+11  * Class that calculates the Cochran-Armitage test for trend
+12  * on a 2x3 contingency table.  Used to estimate association
+13  * in additive genetic models of genotype data.
+14  */
+15 public class CochranArmitage {
+16
+17     private static final Logger THE_LOGGER =
+18        Logger.getLogger(CochranArmitage.class);
+19
+20     // use weights corresponding to additive/codominant model
+21     private static final int[] WEIGHTS = { 0, 1, 2 };
+22
+23     // dimensions of passed contingency table - must be 2 rows x 3 columns
+24     private static final int NUMBER_OF_ROWS = 2;
+25     private static final int NUMBER_OF_COLUMNS = 3;
+26
+27     // variables to hold variance, raw statistic, standardized statistic,
+28     // and p-value
+29     private double stat = 0.0;
+30     private double standardStatistics = 0.0;
+31     private double variance = 0.0;
+32     private double pValue = -1.0; // range is 0.0 to 1.0 (-1.0 means undefined)
+33
+34     // NormalDistribution class from Apache used to calculate p-values
+35     private static NormalDistribution normDist = new NormalDistribution();
+36
+37     /**
+38      * Get the variance
+39      */
+40     public double getVariance() {
+41         return variance;
+42     }
+43
+44     /**
+45      * Get the Stat
+46      */
+47     public double getStat() {
+48         return stat;
+49     }
+50
+51     /**
+52      * Get the StandardStatistics
+53      */
+54     public double getStandardStatistics() {
+55         return standardStatistics;
+56     }
+57
+58     /**
+59      * Get the p-value
+60      */
+61     public double getpValue() {
+62         return pValue;
+63     }
+64
+65     /**
+66      * Computes the Cochran-Armitage test for trend for the passed
+67      * 2 row by 3 column contingency table
+68      * @param countTable = 2x3 contingency table.
+69      * @return the p-value of the Cochran-Armitage statistic of the passed table
+70      */
+71     public double callCochranArmitageTest(int[][] countTable) {
+72        // defined in Example 20-2
+73     }
+74
+75
+76     /**
+77      * @param args input/output files for testing/debugging
+78      * args[0] as input file
+79      * args[1] as output file
+80      */
+81     public static void main(String[] args) throws IOException {
+82        // defined in Example 20-3
+83     }
+84
+85 }
+
+The callCochranArmitageTest() method, defined in Example 20-2, is the core of the Cochran-Armitage algorithm.
+Example 20-2. Cochran-Armitage algorithm: callCochranArmitageTest()
+
+ 1 /**
+ 2  * Computes the Cochran-Armitage test for trend for the passed
+ 3  * 2 row by 3 column contingency table
+ 4  * @param countTable = 2x3 contingency table.
+ 5  * @return the p-value of the Cochran-Armitage statistic of the passed table
+ 6  */
+ 7 public double callCochranArmitageTest(int[][] countTable) {
+ 8
+ 9    if (countTable == null) {
+10       throw new IllegalArgumentException(
+11           "contingency table cannot be null/empty.");
+12    }
+13
+14    if ( (countTable.length != NUMBER_OF_ROWS) || 
+15         (countTable[0].length != NUMBER_OF_COLUMNS) ) {
+16       throw new IllegalArgumentException(
+17           "contingency table must be 2 rows by 3 columns");
+18    }
+19
+20    int totalSum=0;
+21    int[] rowSum = new int[NUMBER_OF_ROWS];
+22    int[] colSum = new int[NUMBER_OF_COLUMNS];
+23
+24    // calculate marginal and overall sums for the contingency table
+25    for (int i=0; i<NUMBER_OF_ROWS; i++) {
+26       for (int j=0; j<NUMBER_OF_COLUMNS; j++) {
+27          rowSum[i] += countTable[i][j];
+28          colSum[j] += countTable[i][j];
+29          totalSum += countTable[i][j];
+30       }
+31    }
+32
+33    // calculate the test statistic and variance based on the formulae at
+34    // http://en.wikipedia.org/wiki/Cochran-Armitage_test_for_trend
+35    stat = 0.0;
+36    variance = 0.0;
+37    for (int j=0; j<NUMBER_OF_COLUMNS; j++) {
+38       stat += WEIGHTS[j] * (countTable[0][j]*rowSum[1] - 
+39                    countTable[1][j]*rowSum[0]);
+40       variance += WEIGHTS[j]*WEIGHTS[j]*colSum[j]*(totalSum-colSum[j]);
+41
+42       if (j!=NUMBER_OF_COLUMNS-1) {
+43          for (int k=j+1;k<NUMBER_OF_COLUMNS;k++) {
+44             variance -= 2*WEIGHTS[j]*WEIGHTS[k]*colSum[j]*colSum[k];
+45          }
+46       }
+47    }
+48    variance *= rowSum[0]*rowSum[1]/totalSum;
+49
+50    // standardized statistic is stat divided by SD
+51    standardStatistics = stat/Math.sqrt(variance);
+52
+53    // use Apache Commons normal distribution to calculate two-tailed p-value
+54    pValue = 2*normDist.cumulativeProbability(-Math.abs(standardStatistics));
+55
+56    // return the p-value
+57    return pValue;
+58 }
+
+The program shown in Example 20-3 tests the Cochran-Armitage algorithm.
+Example 20-3. Cochran-Armitage algorithm: main()
+
+ 1 /**
+ 2  * @param args input/output files for testing/debugging
+ 3  * args[0] as input file
+ 4  * args[1] as output file
+ 5  */
+ 6 public static void main(String[] args) throws IOException {
+ 7    if (args.length != 2) {
+ 8       THE_LOGGER.info("usage: java CochranArmitage " +
+ 9              "<input-filename> <output-filename>");
+10       throw new IOException("must provide input and output files for testing.");
+11    }
+12
+13    long startTime = System.currentTimeMillis();
+14    String inputFileName = args[0];
+15    String outputFileName = args[1];
+16    BufferedWriter outfile = new BufferedWriter(new FileWriter(outputFileName));
+17    outfile.write("score\tp-value\n");
+18    BufferedReader infile = new BufferedReader(new FileReader(inputFileName));
+19
+20    int[][] countTable = new int[2][3];
+21    String line = null;
+22    while (( line = infile.readLine()) != null) {
+23       String[] tokens = line.split("\t");
+24       int index=0;
+25
+26       // populate 2x3 contingency table
+27       for(int i=0; i<2; i++) {
+28          for(int j=0; j<3; j++) {
+29             countTable[i][j] = Integer.parseInt(tokens[index++]);
+30          }
+31       }
+32
+33       CochranArmitage catest = new CochranArmitage();
+34       double pValue = catest.callCochranArmitageTest(countTable);
+35       outfile.write(String.format("%f\t%f\n", 
+36         catest.getStandardStatistics(), pValue));
+37    }
+38
+39    long elapsedTime = System.currentTimeMillis() - startTime;
+40    THE_LOGGER.info("run time (in milliseconds): " + elapsedTime);
+41
+42    infile.close();
+43    outfile.close();
+44 }
+
