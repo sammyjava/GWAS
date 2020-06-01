@@ -1,3 +1,5 @@
+.gradle
+build
 *.txt
 *.txt.gz
 *.png

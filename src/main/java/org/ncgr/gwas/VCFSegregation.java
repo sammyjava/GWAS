@@ -142,8 +142,6 @@ public class VCFSegregation {
 
         // true if case, false if control, keyed by sample ID used in VCF
         Map<String,Boolean> subjectStatus = new HashMap<>();
-        int nCases = 0;
-        int nControls = 0;
         if (cmd.hasOption("labelfile")) {
             // read sample labels from the instance tab-delimited file. Comment lines start with #.
             // 28304	case
@@ -157,13 +155,7 @@ public class VCFSegregation {
                     if (fields.length==2) {
                         String sampleId = fields[0];
                         boolean isCase = fields[1].equals("case");
-                        boolean isControl = fields[1].equals("ctrl");
                         subjectStatus.put(sampleId, isCase);
-                        if (isCase) {
-                            nCases++;
-                        } else if (isControl) {
-                            nControls++;
-                        }
                     }
                 }
             }
@@ -289,11 +281,6 @@ public class VCFSegregation {
                         for (String sampleId : sampleIds) {
                             subjectStatus.put(sampleId, isCase); // true = case
                         }
-                        if (isCase) {
-                            nCases++;
-                        } else {
-                            nControls++;
-                        }
                     }
                 }
             }
@@ -304,29 +291,36 @@ public class VCFSegregation {
         List<String> vcfSampleNames = vcfHeader.getSampleNamesInOrder(); // all subjects in the VCF
         Set<String> caseSampleNames = new HashSet<>();                   // case subjects in the VCF
         Set<String> controlSampleNames = new HashSet<>();                // control subjects in the VCF
+	int nCases = 0;
+	int nControls = 0;
         for (String sampleName : subjectStatus.keySet()) {
             boolean found = false;
+	    String doubleSampleName = sampleName+"_"+sampleName;
             if (vcfSampleNames.contains(sampleName)) {
                 found = true;
                 if (subjectStatus.get(sampleName)) {
                     caseSampleNames.add(sampleName);
+		    nCases++;
                 } else {
                     controlSampleNames.add(sampleName);
+		    nControls++;
                 }
             } else {
                 // SPECIAL CASE: perhaps the VCF uses sample_sample format
-                String doubleSampleName = sampleName+"_"+sampleName;
                 if (vcfSampleNames.contains(doubleSampleName)) {
                     found = true;
                     if (subjectStatus.get(sampleName)) {
                         caseSampleNames.add(doubleSampleName);
+			nCases++;
                     } else {
                         controlSampleNames.add(doubleSampleName);
+			nControls++;
                     }
                 }
             }
-            if (!found) System.err.println("Subject "+sampleName+" NOT FOUND in VCF.");
+            if (!found) System.err.println("Subject "+sampleName+" and "+doubleSampleName+" NOT FOUND in VCF.");
 	}
+	System.err.println("Found "+nCases+" cases and "+nControls+" controls in VCF file.");
 	
 	// spin through the VCF file and get stats on qualified loci
 	for (VariantContext vc : vcfReader) {
