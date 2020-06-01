@@ -22,12 +22,12 @@
 #                                file (e.g. SAMPID; required if -sf)
 
 ## maps to GRCh38
-## /erdos/ncbi/VCF/AREDS/Affy_gru_merge-GRCh38.norm.vcf.gz
-## /erdos/ncbi/VCF/AREDS/Illumina_gru_merge-GRCh38.norm.vcf.gz
+## /erdos/NCBI/VCF/AREDS/Affy_gru_merge-GRCh38.norm.vcf.gz
+## /erdos/NCBI/VCF/AREDS/Illumina_gru_merge-GRCh38.norm.vcf.gz
 
 # ## NOTE: no disease name or disease var
-#PHENOFILE="/erdos/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
-#SAMPLEFILE="/erdos/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
+#PHENOFILE="/erdos/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
+#SAMPLEFILE="/erdos/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
 #CASEVAL=11
 #CONTROLVAL=1
 #CASECONTROLVAR="AMDSTAT"
@@ -43,7 +43,7 @@
 #      > $OUTFILE.labels.txt
 
 
-# PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
+# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
 # PHENOFILE=phs001020.v1.pht005783.v1.p1.c1.GPC_WGS_Subject_Phenotypes.DS-SZRD.txt
 # SAMPLEFILE=phs001020.v1.pht005782.v1.p1.GPC_WGS_Sample.MULTI.txt
 # SAMPLEVAR=SAMPID
@@ -55,7 +55,7 @@
 # #DESIREDSEX=2
 # OUTFILE=GenomicPsychiatryCohort
 
-PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
 PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
 SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
 SAMPLEVAR=SAMPID
