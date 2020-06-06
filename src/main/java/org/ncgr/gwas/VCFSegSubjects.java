@@ -123,17 +123,8 @@ public class VCFSegSubjects {
 
 	// the optional sample file relates dbGaP_Subject_ID in the phenotypes file to the sample ID used in the VCF file
 	//
-	// # Study accession: phs000473.v2.p2
-	// # Table accession: pht002599.v2.p2
-	// # Consent group: All
-	// # Citation instructions: The study accession (phs000473.v2.p2) is used to cite the study and its data tables and documents. The data in this file should be cited using the accession....
-	// # To cite columns of data within this file, please use the variable (phv#) accessions below:
-	// #
-	// # 1) the table name and the variable (phv#) accessions below; or
-	// # 2) you may cite a variable as phv#.v2.p2
-	// ##			phv00167455.v2.p2	phv00167456.v2.p2	phv00167457.v2.p2	phv00167458.v2.p2	phv00167459.v2.p2
-	// dbGaP_Subject_ID	dbGaP_Sample_ID	BioSample Accession	SUBJID	SAMPID	SAMP_SOURCE	SOURCE_SAMPID	SAMPLE_USE
-	// 1284423	1836728	SAMN03897975	PT-1S8D	28278	KAROLINSKA	28278	Seq_DNA_WholeExome; Seq_DNA_SNP_CNV
+	// dbGaP_Subject_ID dbGaP_Sample_ID	BioSample Accession  SUBJID	SAMPID	SAMP_SOURCE SOURCE_SAMPID SAMPLE_USE
+	// 1284423	    1836728	        SAMN03897975	     PT-1S8D	28278	KAROLINSKA  28278	  Seq_DNA_WholeExome; Seq_DNA_SNP_CNV
 	//
 	// NOTE: there may be MORE THAN ONE LINE for the same dbGaP_Subject_ID! We'll assume that SAMPLE IDs are unique.
 	//
@@ -160,26 +151,19 @@ public class VCFSegSubjects {
 		    String dbGaPSubjectId = data[0]; // assume first column is dbGaP_Subject_ID, which I hope is always true -- not necessarily unique!!
 		    String sampleId = data[sampleVarOffset]; // presume this is unique
 		    sampleIdMap.put(sampleId, dbGaPSubjectId);
-		    // DEBUG
-		    if (debug) System.out.println(sampleId+"\t"+dbGaPSubjectId);
-		    //
 		}
             }
 	}
 
         // the required phenotypes file provides case/control information per sample
 	// 
-	// # Study accession: phs000473.v2.p2
-	// # Table accession: pht002600.v2.p2.c1
-	// # Consent group: General Research Use
-	// # Citation instructions: The study accession (phs000473.v2.p2) is used to cite the study and its data tables and documents. The data in this file should be cited using the accession pht002600.v2.p2.c1.
-	// # To cite columns of data within this file, please use the variable (phv#) accessions below:
-	// #
-	// # 1) the table name and the variable (phv#) accessions below; or
-	// # 2) you may cite a variable as phv#.v2.p2.c1.
-	// ##      phv00167460.v2.p2.c1    phv00167461.v2.p2.c1    phv00167462.v2.p2.c1    phv00167463.v2.p2.c1    phv00167464.v2.p2.c1    phv00169020.v2.p2.c1
+	// with DISEASE column:
 	// dbGaP_Subject_ID SUBJID  SEX PRIMARY_DISEASE   ANALYSIS_CAT SITE  Coverage_Pass
 	// 1287483          PT-FJ7E M   Bipolar_Disorder  Case         BROAD N
+	//
+	// without DISEASE column:
+	// dbGaP_SubjID HASGENSP AMDSTAT CATARACT COR ID2  LPSCBASE LCOR  LCORBASE LCORSCORE LNUC  LNUCBASE LNUCSCORE LPSC  LPSCSCORE NUC PSC RPSCBASE RCOR  RCORBASE RCORSCORE RNUC  RNUCBASE RNUCSCORE RPSC  RPSCSCORE
+	// 53181        Y        7       5        1   1890 0        COR-C 0.6      8.83      NUC-B 1.95     4.34      PSC-C 0         1   2   0        COR-B 7.2      13.7      NUC-B 2.6      4.35      PSC-C 0
         Map<String,Boolean> subjectStatus = new HashMap<>(); // true if case, false if control, keyed by study ID used in VCF
         String line = "";
         boolean headerLine = true;
@@ -202,6 +186,11 @@ public class VCFSegSubjects {
 		    if (vars[i].equals("SEX")) sexVarOffset = i;
 		    if (diseaseVar!=null && vars[i].equals(diseaseVar)) diseaseVarOffset = i;
                 }
+		if (debug) {
+		    System.err.println("diseaseVar="+diseaseVar+" offset="+diseaseVarOffset);
+		    System.err.println("ccVar="+ccVar+" offset="+ccVarOffset);
+		    System.err.println("SEX offset="+sexVarOffset);
+		}
                 headerLine = false;
             } else {
                 String[] data = line.split("\t");
@@ -218,14 +207,14 @@ public class VCFSegSubjects {
 		    }
 		}
                 String ccValue = data[ccVarOffset];
-		String sexValue = data[sexVarOffset];
+		String sexValue = null;
+		if (sexVarOffset>0) sexValue = data[sexVarOffset];
 		String diseaseValue = null;
-		if (diseaseVar!=null) diseaseValue = data[diseaseVarOffset];
+		if (diseaseVarOffset>0) diseaseValue = data[diseaseVarOffset];
                 boolean isCase = ccValue.equals(caseValue);
                 boolean isControl = ccValue.equals(controlValue);
-		boolean isDisease = diseaseVar==null || diseaseValue.contains(diseaseName);
-		boolean isDesiredSex = true;
-		if (desiredSexValue!=null) isDesiredSex = sexValue.equals(desiredSexValue);
+		boolean isDisease = diseaseValue==null || diseaseValue.contains(diseaseName);
+		boolean isDesiredSex = sexValue==null || sexValue.equals(desiredSexValue);
                 if (((isDisease && isCase) || isControl) && isDesiredSex) {
 		    for (String sampleId : sampleIds) {
 			subjectStatus.put(sampleId, isCase); // true = case

@@ -26,29 +26,29 @@
 #                                file (e.g. SAMPID; required if -sf)
 #  -vf,--vcffile <arg>           VCF file
 
-## Maps to old reference
-## /erdos/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
-## /erdos/NCBI/VCF/AREDS/Illumina_gru_merge.vcf.gz
-## NOTE: no disease name or disease var
-VCFFILE=/erdos/shokin/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
-PHENODIR=/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles
-PHENOFILE=$PHENODIR/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt
-SAMPLEFILE=$PHENODIR/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt
-SAMPLEVAR=specnum
-CASECONTROLVAR=AMDSTAT
-CASEVAL=11
-CONTROLVAL=1
-MINMAF=0.01
-MAXNOCALLS=100
-OUTFILE=AREDS_Affy
+# ## Maps to old reference
+# ## /erdos/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
+# ## /erdos/NCBI/VCF/AREDS/Illumina_gru_merge.vcf.gz
+# VCFFILE=/erdos/shokin/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
+# PHENODIR=/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles
+# PHENOFILE=$PHENODIR/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt
+# SAMPLEFILE=$PHENODIR/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt
+# SAMPLEVAR=specnum
+# CASECONTROLVAR=AMDSTAT
+# CASEVAL=11
+# CONTROLVAL=1
+# MINMAF=0.01
+# MAXNOCALLS=100
+# OUTFILE=AREDS_Affy
 
-java -server -Xms1g -Xmx600g -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-     -vf $VCFFILE \
-     -pf $PHENOFILE \
-     -sf $SAMPLEFILE \
-     -sv $SAMPLEVAR \
-     -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-     > $OUTFILE.seg.txt
+# ## NOTE: no disease name or disease var
+# java -server -Xms1g -Xmx600g -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+#      -vf $VCFFILE \
+#      -pf $PHENOFILE \
+#      -sf $SAMPLEFILE \
+#      -sv $SAMPLEVAR \
+#      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+#      > $OUTFILE.seg.txt
 
 # VCFFILE=/erdos/shokin/NCBI/VCF/GenomicPsychiatryCohort/c1_gpc.vcf.gz
 # PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
@@ -89,8 +89,8 @@ java -server -Xms1g -Xmx600g -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSeg
 #      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
 #      > $OUTFILE.seg.txt
 
-# VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
-# LABELFILE="../pangenomics/SCD/labels.txt"
-# OUTFILE="HBB"
+VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
+LABELFILE="../pangenomics/SCD/labels.txt"
+OUTFILE="HBB"
 
-# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt

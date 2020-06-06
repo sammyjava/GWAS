@@ -21,26 +21,21 @@
 #  -sv,--samplevar <arg>         study sample ID variable in dbGaP samples
 #                                file (e.g. SAMPID; required if -sf)
 
-## maps to GRCh38
-## /erdos/NCBI/VCF/AREDS/Affy_gru_merge-GRCh38.norm.vcf.gz
-## /erdos/NCBI/VCF/AREDS/Illumina_gru_merge-GRCh38.norm.vcf.gz
+## maps to old reference
+## /erdos/shokin/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
+## /erdos/shokin/NCBI/VCF/AREDS/Illumina_gru_merge.vcf.gz
+PHENOFILE="/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
+SAMPLEFILE="/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
+SAMPLEVAR=specnum
+CASECONTROLVAR=AMDSTAT
+CASEVAL=11
+CONTROLVAL=1
+OUTFILE=AREDS
 
-# ## NOTE: no disease name or disease var
-#PHENOFILE="/erdos/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
-#SAMPLEFILE="/erdos/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
-#CASEVAL=11
-#CONTROLVAL=1
-#CASECONTROLVAR="AMDSTAT"
-#SAMPLEVAR="specnum"
-#ZYGOSITY="HET"
-
-# java -server -Xms1g -Xmx600g -XX:+UseG1GC -XX:+UseStringDeduplication -cp "build/install/gwas/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-#      -vf $VCFFILE \
-#      -pf $PHENOFILE \
-#      -sf $SAMPLEFILE \
-#      -sv $SAMPLEVAR \
-#      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-#      > $OUTFILE.labels.txt
+## NOTE: no disease name or disease var
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegSubjects --debug \
+     -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+     > $OUTFILE.labels.txt
 
 
 # PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
@@ -55,20 +50,20 @@
 # #DESIREDSEX=2
 # OUTFILE=GenomicPsychiatryCohort
 
-PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-SAMPLEVAR=SAMPID
-DISEASENAME=Schizophrenia
-DISEASEVAR=PRIMARY_DISEASE
-CASECONTROLVAR=ANALYSIS_CAT
-CASEVAL=Case
-CONTROLVAL=Control
-DESIREDSEX=F
-OUTFILE=SchizophreniaSwedish_Sklar.F
+# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+# SAMPLEVAR=SAMPID
+# DISEASENAME=Schizophrenia
+# DISEASEVAR=PRIMARY_DISEASE
+# CASECONTROLVAR=ANALYSIS_CAT
+# CASEVAL=Case
+# CONTROLVAL=Control
+# DESIREDSEX=F
+# OUTFILE=SchizophreniaSwedish_Sklar.F
 
-java -server -cp "build/install/gwas/lib/*" org.ncgr.gwas.VCFSegSubjects  \
-     -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-	-ds $DESIREDSEX \
-     > $OUTFILE.labels.txt
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegSubjects  \
+#      -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+# 	-ds $DESIREDSEX \
+#      > $OUTFILE.labels.txt
 
