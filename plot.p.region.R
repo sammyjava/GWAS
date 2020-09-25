@@ -7,7 +7,9 @@ source("snpData.R")
 ##
 ## colnames(seg) = c("chr","pos","id","ref","alts","caseString","controlString","caseNoCalls","controlNoCalls","statistic","p")
 ##
-plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALSE, labelSNP=FALSE, showGenes=FALSE, ymin=0, ymax=0, pSig=5e-8) {
+plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALSE, labelSNP=FALSE, showGenes=FALSE, showDensity=FALSE, ymin=0, ymax=0, pSig=5e-8) {
+
+    sigColor = "black"
 
     if (!is.null(gene)) {
         geneRecord = genes[genes$name==gene,]
@@ -16,8 +18,26 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
         end = geneRecord$end
     }
         
-    if (chr!="0" && start==0) start = min(seg$pos[seg$chr==chr])
-    if (chr!="0" && end==0) end = max(seg$pos[seg$chr==chr])
+    if (chr!="0") {
+        if (start==0) {
+            start = min(seg$pos[seg$chr==chr])
+        } else {
+            start = min(seg$pos[seg$chr==chr & seg$pos>=start])
+        }
+    }
+    if (chr!="0") {
+        if (end==0) {
+            end = max(seg$pos[seg$chr==chr])
+        } else if (is.null(gene)) {
+            end = max(seg$pos[seg$chr==chr & seg$pos<=end])
+        }
+    }
+    
+    if (is.null(gene)) {
+        title = paste(chr,":",start,"-",end)
+    } else {
+        title = gene
+    }
 
     ## collect the points of interest
     pts = seg$pos>0
@@ -28,13 +48,21 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
     ## significant points
     ptsSig = pts & seg$p<pSig
     hasSig = length(seg$p[ptsSig]) > 0
+    ptsSigNum = length(seg$pos[ptsSig])
+    ptsHigh = pts & seg$p<1e-2
+    ptsHighNum = length(seg$pos[ptsHigh])
+
+    ## infinite points
+    ptsInf = is.infinite(seg$mlog10p)
+    hasInf = length(seg$p[ptsInf]) > 0
 
     ## limits
     xlim = c(start, end)
     if (ymax==0) ymax = max(seg$mlog10p[pts & is.finite(seg$mlog10p)])
-    ## set infinite values to ymax*2
-    ymax = ymax*2
-    seg$mlog10p[is.infinite(seg$mlog10p)] = ymax
+    if (hasInf) {
+        ymax = ymax + 1
+        seg$mlog10p[ptsInf] = ymax
+    }
     ylim = c(ymin, ymax)
 
     ## plot
@@ -46,14 +74,17 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
              main=deparse(substitute(seg)),
              pch=1, cex=0.3, col="black")
     } else {
+        numLoci = length(seg$pos[pts])
         plot(seg$pos[pts], seg$mlog10p[pts],
              xlab=paste("Chr",chr,"position"),
              ylab="-log10(p)",
              xlim=xlim,
              ylim=ylim,
              ## main=paste(deparse(substitute(seg)),chr,":",start,"-",end),
-             main=paste(chr,":",start,"-",end),
-             pch=1, cex=0.7, col="black")
+             main=paste(title," (",numLoci," loci, ",ptsSigNum,"<",pSig,", ",ptsHighNum,"<1e-2)", sep=""),
+             pch=1, cex=0.8, col="black")
+        ## use different symbol for infinite points
+        points(seg$pos[ptsInf], seg$mlog10p[ptsInf], pch=17, cex=1.5, col=sigColor)
     }
 
     ## vertical chromosome lines if plotting full genome
@@ -68,37 +99,44 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
             }
         }
     }
+
+    ## highlight somewhat significant p values
+    points(seg$pos[ptsHigh], seg$mlog10p[ptsHigh], pch=1, cex=0.8, col=sigColor)
     
+
     ## highlight highly significant p values
     if (hasSig && chr=="0") {
-        points(as.numeric(rownames(seg)[ptsSig]), seg$mlog10p[ptsSig], pch=19, cex=0.8, col="darkgreen")
+        points(as.numeric(rownames(seg)[ptsSig]), seg$mlog10p[ptsSig], pch=19, cex=0.9, col=sigColor)
     } else if (hasSig) {
-        points(seg$pos[ptsSig], seg$mlog10p[ptsSig], pch=19, cex=0.8, col="darkgreen")
+        points(seg$pos[ptsSig], seg$mlog10p[ptsSig], pch=19, cex=0.9, col=sigColor)
     }
 
     ## line at pSig
-    lines(xlim, -log10(c(pSig,pSig)), col="gray", lty=2)
+    ## lines(xlim, -log10(c(pSig,pSig)), col="gray", lty=2)
 
     ## label significant points if requested
     if (hasSig && chr!="0" && label) {
-        snpInfo = c()
-        for (rsId in seg$id[ptsSig]) {
-            clinvar.clinsig = ""
-            if (labelSNP && startsWith(rsId,"rs")) {
-                ## query the SNP API
-                json = snpData(rsId)
-                for (hit in json$hits) {
-                    if ("clinvar" %in% colnames(hit)) {
-                        clinvar = hit$clinvar
-                        for (clinsig in clinvar$clinsig) {
-                            if (!is.na(clinsig)) clinvar.clinsig = paste(clinvar.clinsig, clinsig)
-                        }
-                    }
-                }
-            }
-            snpInfo = c(snpInfo, clinvar.clinsig)
-        }
-        textStr = paste(seg$id[ptsSig], seg$genotypes[ptsSig], seg$caseString[ptsSig], seg$controlString[ptsSig])
+        ## snpInfo = c()
+        ## for (rsId in seg$id[ptsSig]) {
+        ##     clinvar.clinsig = ""
+        ##     if (labelSNP && startsWith(rsId,"rs")) {
+        ##         ## query the SNP API
+        ##         json = snpData(rsId)
+        ##         for (hit in json$hits) {
+        ##             if ("clinvar" %in% colnames(hit)) {
+        ##                 clinvar = hit$clinvar
+        ##                 for (clinsig in clinvar$clinsig) {
+        ##                     if (!is.na(clinsig)) clinvar.clinsig = paste(clinvar.clinsig, clinsig)
+        ##                 }
+        ##             }
+        ##         }
+        ##     }
+        ##     snpInfo = c(snpInfo, clinvar.clinsig)
+        ## }
+
+        ## control first since genotypes has REF first
+        ## textStr = paste(seg$pos[ptsSig], seg$id[ptsSig], seg$genotypes[ptsSig], seg$controlString[ptsSig], seg$caseString[ptsSig])
+        textStr = seg$id[ptsSig]
         ## ## add odds ratio if just two genotypes
         ## for (i in 1:length(textStr)) {
         ##     if (seg$ngenotypes[ptsSig][i]==2) {
@@ -110,27 +148,29 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
         ##         textStr[i] = paste(textStr[i], round(oddsRatio,2))
         ##     }
         ## }
-        if (length(snpInfo)>0) textStr = paste(textStr, snpInfo)
-        text(seg$pos[ptsSig], seg$mlog10p[ptsSig], textStr, col="darkgreen", pos=4, cex=0.7, offset=0.3)
+
+        ## if (length(snpInfo)>0) textStr = paste(textStr, snpInfo)
+        
+        text(seg$pos[ptsSig], seg$mlog10p[ptsSig], textStr, col=sigColor, pos=4, cex=1.0, offset=0.3)
     }
 
     ## show gene or genes if requested
     ## REQUIRES load-genes!!
     ypos = par("yaxp")[1]
     bar = c(ypos-(ymax-ymin)*0.01, ypos+(ymax-ymin)*0.01)
-    if (!is.null(gene)) {
-        lines(xlim, c(ypos,ypos))
-        x = (start+end)/2
-        text(x, ypos, gene, pos=1, cex=0.6)
-        ## end bars
-        lines(rep(start,2), bar)
-        lines(rep(end,2), bar)
-        if (geneRecord$strand=="-") {
-            text((start+end)/2, ypos, "<")
-        } else {
-            text((start+end)/2, ypos, ">")
-        }
-    }
+    ## if (!is.null(gene)) {
+    ##     lines(xlim, c(ypos,ypos))
+    ##     x = (start+end)/2
+    ##     text(x, ypos, gene, pos=1, cex=0.7, offset=0.4)
+    ##     ## end bars
+    ##     lines(rep(start,2), bar)
+    ##     lines(rep(end,2), bar)
+    ##     if (geneRecord$strand=="-") {
+    ##         text((start+end)/2, ypos, "<")
+    ##     } else {
+    ##         text((start+end)/2, ypos, ">")
+    ##     }
+    ## }
     if (showGenes) {
         within = genes$seqid==chr & genes$end>=start & genes$start<=end
         genesWithin = genes[within,]
@@ -145,6 +185,19 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
             } else {
                 text((genesWithin$start[i]+genesWithin$end[i])/2, ypos, ">")
             }
+        }
+    }
+
+    if (showDensity) {
+        width = 1000000
+        for (i in seq(start,end,by=width)) {
+            j = i + width
+            n = length(seg$pos[seg$chr==chr & seg$pos>=i & seg$pos<j])
+            if (n>0) {
+                lines(c(i,j), log10(c(n,n)), col="blue", lwd=3)
+                text((i+j)/2, log10(n), n, col="blue", pos=3)
+            }
+            
         }
     }
 }
