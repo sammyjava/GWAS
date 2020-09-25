@@ -65,32 +65,34 @@
 # DESIREDSEX=
 # OUTFILE=GenomicPsychiatryCohort
 
-# VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-# SAMPLEVAR=SAMPID
-# DISEASENAME=Schizophrenia
-# DISEASEVAR=PRIMARY_DISEASE
-# CASECONTROLVAR=ANALYSIS_CAT
-# CASEVAL=Case
-# CONTROLVAL=Control
-# MINMAF=0.01
-# MAXNOCALLS=100
-# OUTFILE=SchizophreniaSwedish_Sklar
+VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
+PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+SAMPLEVAR=SAMPID
+DISEASENAME=Schizophrenia
+DISEASEVAR=PRIMARY_DISEASE
+CASECONTROLVAR=ANALYSIS_CAT
+CASEVAL=Case
+CONTROLVAL=Control
+MINMAF=0.01
+MAXNOCALLS=100
+DESIREDSEX=M
+OUTFILE=SchizophreniaSwedish_Sklar.$DESIREDSEX
 
-# java -server -Xms1g -Xmx600g -XX:+UseG1GC -XX:+UseStringDeduplication -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-#      -vf $VCFFILE \
-#      -pf $PHENODIR/$PHENOFILE \
-#      -sf $PHENODIR/$SAMPLEFILE \
-#      -sv $SAMPLEVAR \
-#      -dn $DISEASENAME \
-#      -dv $DISEASEVAR \
-#      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-#      > $OUTFILE.seg.txt
+java -server -Xms1g -Xmx600g -XX:+UseG1GC -XX:+UseStringDeduplication -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+     -vf $VCFFILE \
+     -pf $PHENODIR/$PHENOFILE \
+     -sf $PHENODIR/$SAMPLEFILE \
+     -sv $SAMPLEVAR \
+     -dn $DISEASENAME \
+     -dv $DISEASEVAR \
+     -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+     -ds $DESIREDSEX \
+     > $OUTFILE.seg.txt
 
-VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
-LABELFILE="../pangenomics/SCD/labels.txt"
-OUTFILE="HBB"
+# VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
+# LABELFILE="../pangenomics/SCD/labels.txt"
+# OUTFILE="HBB"
 
-java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
