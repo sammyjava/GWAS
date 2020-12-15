@@ -59,11 +59,10 @@ DISEASEVAR=PRIMARY_DISEASE
 CASECONTROLVAR=ANALYSIS_CAT
 CASEVAL=Case
 CONTROLVAL=Control
-DESIREDSEX=F
-OUTFILE=SchizophreniaSwedish_Sklar.$DESIREDSEX
+#DESIREDSEX=F -ds $DESIREDSEX
+OUTFILE=SchizophreniaSwedish_Sklar
 
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegSubjects  \
      -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-     -ds $DESIREDSEX \
      > $OUTFILE.labels.txt
 

@@ -1,0 +1,29 @@
+#!/bin/sh
+# usage: SegPRS
+#  -lf,--labelfile <arg>         label file containing case/control labels
+#                                for each subject
+#  -maf,--minmaf <arg>           minimum MAF for a locus to be output (0.01)
+#  -mnc,--maxnocalls <arg>       maximum number of no-calls for a locus to
+#                                be output (1000)
+#  -vf,--vcffile <arg>           VCF file
+
+MINMAF=0.01
+MAXNOCALLS=100
+
+VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
+SEGFILE=SchizophreniaSwedish_Sklar.seg.txt
+LABELFILE=SchizophreniaSwedish_Sklar.labels.txt
+
+CONTIG=6
+START=31321649
+END=31324989
+OUTFILE=HLAB.prs.txt
+
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.SegPRS \
+	-maf $MINMAF \
+	-mnc $MAXNOCALLS \
+   	-vf $VCFFILE \
+	-sf $SEGFILE \
+	-lf $LABELFILE \
+	-c $CONTIG -s $START -e $END \
+	> $OUTFILE.seg.txt

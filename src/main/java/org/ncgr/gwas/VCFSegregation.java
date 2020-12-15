@@ -416,11 +416,8 @@ public class VCFSegregation {
 	    // we can still get a few cases with 0 alternative counts
 	    if (Double.isNaN(pValue)) continue;
 	    // output the line
-	    System.out.println(contig+"\t"+start+"\t"+id+"\t"+
-			       genotypeString+"\t"+
-			       caseString+"\t"+controlString+"\t"+
-			       noCallCount+"\t"+
-			       ca.standardStatistic+"\t"+pValue);
+	    SegRecord rec = new SegRecord(contig, start, id, genotypeString, caseString, controlString, noCallCount, ca.standardStatistic, pValue);
+	    System.out.println(rec);
 	}
     }
 }

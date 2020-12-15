@@ -214,7 +214,7 @@ public class VCFSegSubjects {
                 boolean isCase = ccValue.equals(caseValue);
                 boolean isControl = ccValue.equals(controlValue);
 		boolean isDisease = diseaseValue==null || diseaseValue.contains(diseaseName);
-		boolean isDesiredSex = sexValue==null || sexValue.equals(desiredSexValue);
+		boolean isDesiredSex = desiredSexValue==null || sexValue==null || sexValue.equals(desiredSexValue);
                 if (((isDisease && isCase) || isControl) && isDesiredSex) {
 		    for (String sampleId : sampleIds) {
 			subjectStatus.put(sampleId, isCase); // true = case
