@@ -9,7 +9,7 @@ source("snpData.R")
 ##
 plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALSE, labelSNP=FALSE, showGenes=FALSE, showDensity=FALSE, ymin=0, ymax=0, pSig=5e-8) {
 
-    sigColor = "black"
+    sigColor = "red"
 
     if (!is.null(gene)) {
         geneRecord = genes[genes$name==gene,]
@@ -46,10 +46,10 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
     }
 
     ## significant points
-    ptsSig = pts & seg$p<pSig
+    ptsSig = pts & seg$p<pSig & !is.na(seg$p)
     hasSig = length(seg$p[ptsSig]) > 0
     ptsSigNum = length(seg$pos[ptsSig])
-    ptsHigh = pts & seg$p<1e-2
+    ptsHigh = pts & seg$p<1e-2 & !is.na(seg$p)
     ptsHighNum = length(seg$pos[ptsHigh])
 
     ## infinite points
