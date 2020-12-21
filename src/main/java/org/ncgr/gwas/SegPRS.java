@@ -74,6 +74,14 @@ public class SegPRS {
         Option maxNoCallsOption = new Option("mnc", "maxnocalls", true, "maximum number of no-calls for a locus to be output ("+DEFAULT_MAX_NOCALLS+")");
         maxNoCallsOption.setRequired(false);
         options.addOption(maxNoCallsOption);
+	//
+	Option nCasesOption = new Option("maxcases", "maxcases", true, "number of cases to be included in calculation (0=all)");
+	nCasesOption.setRequired(false);
+	options.addOption(nCasesOption);
+	//
+	Option nControlsOption = new Option("maxcontrols", "maxcontrols", true, "number of controls to be included in calculation (0=all)");
+	nControlsOption.setRequired(false);
+	options.addOption(nControlsOption);
 	
         try {
             cmd = parser.parse(options, args);
@@ -110,15 +118,32 @@ public class SegPRS {
             }
         }
 
-	// get the labels for the subjects
+	// load the subjects and labels; limit to maxCases and maxControls if given
+	int maxCases = 0;
+	int maxControls = 0;
+	if (cmd.hasOption("maxcases")) {
+	    maxCases = Integer.parseInt(cmd.getOptionValue("maxcases"));
+	}
+	if (cmd.hasOption("maxcontrols")) {
+	    maxControls = Integer.parseInt(cmd.getOptionValue("maxcontrols"));
+	}
+	int nCases = 0;
+	int nControls = 0;
 	Map<String,String> sampleLabels = new HashMap<>();
 	String labelFilename = cmd.getOptionValue("labelfile");
 	BufferedReader labelReader = new BufferedReader(new FileReader(labelFilename));
 	String labelLine = null;
 	while ((labelLine=labelReader.readLine())!=null) {
 	    String[] fields = labelLine.split("\t");
-	    if (fields.length==2) {
-		sampleLabels.put(fields[0], fields[1]);
+	    String name =  fields[0];
+	    String label = fields[1];
+	    boolean isCase = label.equals("case");
+	    boolean isControl = label.equals("ctrl");
+	    if (isCase) nCases++;
+	    if (isControl) nControls++;
+	    if ((isCase && (maxCases==0 || maxCases>=nCases)) ||
+		(isControl && (maxControls==0 || maxControls>=nControls))) {
+		sampleLabels.put(name, label);
 	    }
 	}
 
@@ -141,7 +166,7 @@ public class SegPRS {
             }
         }
         segReader.close();
-        System.err.println("Will analyze "+segRecords.size()+" seg records.");
+        System.err.println("Will analyze "+segRecords.size()+" seg records for "+sampleLabels.size()+" subjects.");
 
         // spin over the desired seg records, building the PRS for every sample
 	ConcurrentSkipListMap<String,Double> samplePRS = new ConcurrentSkipListMap<>(); // keyed by sample name
@@ -158,7 +183,7 @@ public class SegPRS {
 		}
 	    }
 	    // DEBUG
-	    System.err.println(segRecord.contig+":"+segRecord.start+"\t"+segLine+logOddsRatios);
+	    System.err.println(segRecord.contig+":"+segRecord.start+"\t"+logOddsRatios);
 	    // we're supposed to close the CloseableIterater when done
 	    CloseableIterator ci = vcfReader.query(segRecord.contig, segRecord.start, segRecord.start);
 	    try {
@@ -210,6 +235,7 @@ public class SegPRS {
 	vcfReader.close();
 
 	// output results
+	System.out.println("sample\tlabel\tscore");
 	for (String sampleName : samplePRS.keySet()) {
 	    System.out.println(sampleName+"\t"+sampleLabels.get(sampleName)+"\t"+samplePRS.get(sampleName)/sampleN.get(sampleName));
 	}

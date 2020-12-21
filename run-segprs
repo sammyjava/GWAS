@@ -12,6 +12,8 @@
 
 MINMAF=0.00
 MAXNOCALLS=0
+MAXCASES=4969
+MAXCONTROLS=4969
 
 VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
 SEGFILE=SchizophreniaSwedish_Sklar.seg.txt
@@ -33,4 +35,6 @@ java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.SegPRS \
      -vf $VCFFILE \
      -sf $SEGFILE \
      -lf $LABELFILE \
-     > $OUTFILE.prs.txt
+     -maxcases $MAXCASES \
+     -maxcontrols $MAXCONTROLS \
+     > $OUTPREFIX.prs.txt
