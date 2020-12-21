@@ -5,6 +5,8 @@
 #####################################################################
 
 calc.AUC = function(prs) {
+    ## just in case
+    colnames(prs) = c("sample", "label", "score")
 
     nCase = nrow(prs[prs$label=="case",])
     nControl = nrow(prs[prs$label=="ctrl",])

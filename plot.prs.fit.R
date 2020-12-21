@@ -7,10 +7,14 @@ library(fitdistrplus)
 ##        label ("case" or "ctrl")
 ################################################################################################
 
-plot.prs.fit = function(prs, label) {
+plot.prs.fit = function(prs, label="both") {
     ## just in case
     colnames(prs) = c("sample", "label", "score")
     ## use method `plot.fitdist`
-    fit = fitdist(prs$score[prs$label=="ctrl"], "norm")
+    if (label=="both") {
+        fit = fitdist(prs$score, "norm")
+    } else {
+        fit = fitdist(prs$score[prs$label==label], "norm")
+    }
     plot(fit)
 }

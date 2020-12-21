@@ -23,7 +23,7 @@ LABELFILE=SchizophreniaSwedish_Sklar.labels.txt
 # OUTFILE=CHR6.prs.txt
 # REGIONS=6:1-171115067
 
-OUTFILE=4GENES.prs.txt
+OUTPREFIX=4GENES
 REGIONS=6:31236526-31239907,9:33785948-33818793,11:1012821-1036706,16:2022038-2032934
 
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.SegPRS \
@@ -33,4 +33,4 @@ java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.SegPRS \
      -vf $VCFFILE \
      -sf $SEGFILE \
      -lf $LABELFILE \
-     > $OUTFILE.seg.txt
+     > $OUTFILE.prs.txt
