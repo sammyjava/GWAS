@@ -133,7 +133,8 @@ public class SegPRS {
 	}
 
 	// spin through the segregation file and build PRS for each subject at each locus
-	ConcurrentSkipListMap<String,Double> samplePRS = new ConcurrentSkipListMap<>(); // keyed by VCF sample name
+	ConcurrentSkipListMap<String,Double> samplePRS = new ConcurrentSkipListMap<>(); // keyed by sample name
+	ConcurrentSkipListMap<String,Integer> sampleN = new ConcurrentSkipListMap<>();  // keyed by sample name
 	VCFFileReader vcfReader = new VCFFileReader(new File(cmd.getOptionValue("vcffile")));
 	String segFilename = cmd.getOptionValue("segfile");
 	BufferedReader segReader = new BufferedReader(new FileReader(segFilename));
@@ -144,17 +145,18 @@ public class SegPRS {
 	    if (contig!=null && !rec.contig.equals(contig)) continue;
 	    if (start!=0 && rec.start<start) continue;
 	    if (end!=0 && rec.start>end) continue;
+	    if (rec.noCallCount>maxNoCalls) continue;
 	    // exclude zero and +-infinity odds ratio genotypes
 	    Map<String,Double> oddsRatiosIncludingInfinity = rec.getOddsRatios();
-	    Map<String,Double> oddsRatios = new HashMap<>();
+	    Map<String,Double> logOddsRatios = new HashMap<>();
 	    for (String genotype : oddsRatiosIncludingInfinity.keySet()) {
 		double or = oddsRatiosIncludingInfinity.get(genotype);
 		if (or!=Double.POSITIVE_INFINITY && or!=Double.NEGATIVE_INFINITY && Math.abs(or)>0.0) {
-		    oddsRatios.put(genotype, or);
+		    logOddsRatios.put(genotype, Math.log10(or));
 		}
 	    }
 	    // DEBUG
-	    System.err.println(segLine+oddsRatios);
+	    System.err.println(segLine+logOddsRatios);
 	    //
 	    // we're supposed to close the CloseableIterater when done
 	    CloseableIterator ci = vcfReader.query(rec.contig, rec.start, rec.start);
@@ -163,9 +165,6 @@ public class SegPRS {
 		    VariantContext vc = (VariantContext) o;
 		    // require at least two genotypes
 		    if (vc.getGenotypes().size()<2) continue;
-		    // no-call count criterion
-		    int noCallCount = vc.getNoCallCount();
-		    if (noCallCount>maxNoCalls) continue;
 		    // minimum MAF criterion
 		    int calledCount = vc.getCalledChrCount();
 		    int numAboveMAF = 0;
@@ -182,14 +181,18 @@ public class SegPRS {
 			    if (!g.isNoCall()) {
 				String gString = g.getGenotypeString();
 				String sampleName = g.getSampleName();
-				if (sampleLabels.containsKey(sampleName) && oddsRatios.containsKey(gString)) {
-				    double or = oddsRatios.get(gString);
+				if (sampleLabels.containsKey(sampleName) && logOddsRatios.containsKey(gString)) {
+				    double logOR = logOddsRatios.get(gString);
 				    if (samplePRS.containsKey(sampleName)) {
 					double prs = samplePRS.get(sampleName);
-					prs *= or;
+					prs += logOR;
 					samplePRS.put(sampleName, prs);
+					int n = sampleN.get(sampleName);
+					n++;
+					sampleN.put(sampleName, n);
 				    } else {
-					samplePRS.put(sampleName, or);
+					samplePRS.put(sampleName, logOR);
+					sampleN.put(sampleName, 1);
 				    }
 				}
 			    }
@@ -206,8 +209,7 @@ public class SegPRS {
 
 	// output results
 	for (String sampleName : samplePRS.keySet()) {
-	    System.out.println(sampleName+"\t"+sampleLabels.get(sampleName)+"\t"+samplePRS.get(sampleName));
+	    System.out.println(sampleName+"\t"+sampleLabels.get(sampleName)+"\t"+samplePRS.get(sampleName)/sampleN.get(sampleName));
 	}
     }
-
 }
