@@ -1,11 +1,14 @@
 #!/bin/sh
 # usage: SegPRS
-#  -lf,--labelfile <arg>         label file containing case/control labels
-#                                for each subject
-#  -maf,--minmaf <arg>           minimum MAF for a locus to be output (0.01)
-#  -mnc,--maxnocalls <arg>       maximum number of no-calls for a locus to
-#                                be output (1000)
-#  -vf,--vcffile <arg>           VCF file
+#  -lf,--labelfile <arg>     case/control labels file
+#  -maf,--minmaf <arg>       minimum MAF for a locus to be output (0.01)
+#  -mnc,--maxnocalls <arg>   maximum number of no-calls for a locus to be
+#                            output (1000)
+#  -r,--regions <arg>        comma-separated (no spaces!) regions in form
+#                            chr:start-end for PRS calculation (null = whole
+#                            genome)
+#  -sf,--segfile <arg>       VCFSegregation output file
+#  -vf,--vcffile <arg>       VCF file
 
 MINMAF=0.00
 MAXNOCALLS=0
@@ -14,21 +17,20 @@ VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
 SEGFILE=SchizophreniaSwedish_Sklar.seg.txt
 LABELFILE=SchizophreniaSwedish_Sklar.labels.txt
 
-# CONTIG=6
-# START=31321649
-# END=31324989
 # OUTFILE=HLAB.prs.txt
+# REGIONS=6:31321649-31324989
 
-CONTIG=6
-START=1
-END=171115067
-OUTFILE=CHR6.prs.txt
+# OUTFILE=CHR6.prs.txt
+# REGIONS=6:1-171115067
+
+OUTFILE=4GENES.prs.txt
+REGIONS=6:31236526-31239907,9:33785948-33818793,11:1012821-1036706,16:2022038-2032934
 
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.SegPRS \
-	-maf $MINMAF \
-	-mnc $MAXNOCALLS \
-   	-vf $VCFFILE \
-	-sf $SEGFILE \
-	-lf $LABELFILE \
-	-c $CONTIG -s $START -e $END \
-	> $OUTFILE.seg.txt
+     -r $REGIONS \
+     -maf $MINMAF \
+     -mnc $MAXNOCALLS \
+     -vf $VCFFILE \
+     -sf $SEGFILE \
+     -lf $LABELFILE \
+     > $OUTFILE.seg.txt

@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
@@ -36,6 +36,7 @@ import htsjdk.samtools.util.CloseableIterator;
 
 /**
  * Compute probability risk scores for the subjects in a study with VCF segregation data already computed.
+ * PRS is calculated over a provided set of regions (or the entire genome).
  */
 public class SegPRS {
     static int DEFAULT_MAX_NOCALLS = 1000;
@@ -62,6 +63,10 @@ public class SegPRS {
 	labelFileOption.setRequired(true);
 	options.addOption(labelFileOption);
 	//
+        Option regionsOption = new Option("r", "regions", true, "comma-separated (no spaces!) regions in form chr:start-end for PRS calculation (null = whole genome)");
+        regionsOption.setRequired(true);
+        options.addOption(regionsOption);
+	//
 	Option minMAFOption = new Option("maf", "minmaf", true, "minimum MAF for a locus to be output ("+DEFAULT_MIN_MAF+")");
 	minMAFOption.setRequired(false);
 	options.addOption(minMAFOption);
@@ -69,18 +74,6 @@ public class SegPRS {
         Option maxNoCallsOption = new Option("mnc", "maxnocalls", true, "maximum number of no-calls for a locus to be output ("+DEFAULT_MAX_NOCALLS+")");
         maxNoCallsOption.setRequired(false);
         options.addOption(maxNoCallsOption);
-	//
-	Option contigOption = new Option("c", "contig", true, "contig/chromosome for analysis region (all)");
-	contigOption.setRequired(false);
-	options.addOption(contigOption);
-	//
-	Option startOption = new Option("s", "start", true, "starting coordinate of analysis region (full contigs)");
-	startOption.setRequired(false);
-	options.addOption(startOption);
-	//
-	Option endOption = new Option("e", "end", true, "ending coordinate of analysis region (full contigs)");
-	endOption.setRequired(false);
-	options.addOption(endOption);
 	
         try {
             cmd = parser.parse(options, args);
@@ -109,16 +102,13 @@ public class SegPRS {
         }
 
 	// region parameters
-	String contig = null;
-	if (cmd.hasOption("contig")) {
-	    contig = cmd.getOptionValue("contig");
-	}
-	int start = 0;
-	int end = 0;
-	if (cmd.hasOption("start") && cmd.hasOption("end")) {
-	    start = Integer.parseInt(cmd.getOptionValue("start"));
-	    end = Integer.parseInt(cmd.getOptionValue("end"));
-	}
+        List<Region> regions = new LinkedList<>();
+        if (cmd.hasOption("regions")) {
+            String[] regionStrings = cmd.getOptionValue("regions").split(",");
+            for (String regionString : regionStrings) {
+                regions.add(new Region(regionString));
+            }
+        }
 
 	// get the labels for the subjects
 	Map<String,String> sampleLabels = new HashMap<>();
@@ -132,22 +122,34 @@ public class SegPRS {
 	    }
 	}
 
-	// spin through the segregation file and build PRS for each subject at each locus
-	ConcurrentSkipListMap<String,Double> samplePRS = new ConcurrentSkipListMap<>(); // keyed by sample name
-	ConcurrentSkipListMap<String,Integer> sampleN = new ConcurrentSkipListMap<>();  // keyed by sample name
-	VCFFileReader vcfReader = new VCFFileReader(new File(cmd.getOptionValue("vcffile")));
+	// spin through the segregation file and store lines within our desired regions that meet filter conditions
+        List<SegRecord> segRecords = new LinkedList<>(); // the seg records we want to analyze
 	String segFilename = cmd.getOptionValue("segfile");
 	BufferedReader segReader = new BufferedReader(new FileReader(segFilename));
 	String segLine = null;
 	while ((segLine=segReader.readLine())!=null) {
 	    if (segLine.startsWith("#")) continue;
-	    SegRecord rec = new SegRecord(segLine);
-	    if (contig!=null && !rec.contig.equals(contig)) continue;
-	    if (start!=0 && rec.start<start) continue;
-	    if (end!=0 && rec.start>end) continue;
-	    if (rec.noCallCount>maxNoCalls) continue;
+	    SegRecord segRecord = new SegRecord(segLine);
+            for (Region region : regions) {
+                // positions
+                if (!segRecord.contig.equals(region.contig)) continue;
+                if (segRecord.start<region.start) continue;
+                if (segRecord.start>region.end) continue;
+                // filters
+                if (segRecord.noCallCount>maxNoCalls) continue;
+                segRecords.add(segRecord);
+            }
+        }
+        segReader.close();
+        System.err.println("Will analyze "+segRecords.size()+" seg records.");
+
+        // spin over the desired seg records, building the PRS for every sample
+	ConcurrentSkipListMap<String,Double> samplePRS = new ConcurrentSkipListMap<>(); // keyed by sample name
+	ConcurrentSkipListMap<String,Integer> sampleN = new ConcurrentSkipListMap<>();  // keyed by sample name
+	VCFFileReader vcfReader = new VCFFileReader(new File(cmd.getOptionValue("vcffile")));
+        for (SegRecord segRecord : segRecords) {
 	    // exclude zero and +-infinity odds ratio genotypes
-	    Map<String,Double> oddsRatiosIncludingInfinity = rec.getOddsRatios();
+	    Map<String,Double> oddsRatiosIncludingInfinity = segRecord.getOddsRatios();
 	    Map<String,Double> logOddsRatios = new HashMap<>();
 	    for (String genotype : oddsRatiosIncludingInfinity.keySet()) {
 		double or = oddsRatiosIncludingInfinity.get(genotype);
@@ -156,10 +158,9 @@ public class SegPRS {
 		}
 	    }
 	    // DEBUG
-	    System.err.println(segLine+logOddsRatios);
-	    //
+	    System.err.println(segRecord.contig+":"+segRecord.start+"\t"+segLine+logOddsRatios);
 	    // we're supposed to close the CloseableIterater when done
-	    CloseableIterator ci = vcfReader.query(rec.contig, rec.start, rec.start);
+	    CloseableIterator ci = vcfReader.query(segRecord.contig, segRecord.start, segRecord.start);
 	    try {
 		for (Object o : ci.toList()) {
 		    VariantContext vc = (VariantContext) o;
@@ -174,6 +175,7 @@ public class SegPRS {
 			if (maf>minMAF) numAboveMAF++; // includes max allele, usually REF
 		    }
 		    if (numAboveMAF<2) continue;
+                    ///////////////////////////////////////////////////////////////////////////////////////////
 		    // update the PRS for each genotype/sample
 		    ConcurrentSkipListSet concurrentGenotypes = new ConcurrentSkipListSet<>(vc.getGenotypes());
 		    concurrentGenotypes.parallelStream().forEach(obj -> {
@@ -197,6 +199,7 @@ public class SegPRS {
 				}
 			    }
 			});
+                    ///////////////////////////////////////////////////////////////////////////////////////////
 		}
 	    } catch (Exception e) {
 		System.err.println(e);
@@ -205,7 +208,6 @@ public class SegPRS {
 	    }
 	}
 	vcfReader.close();
-	segReader.close();
 
 	// output results
 	for (String sampleName : samplePRS.keySet()) {
