@@ -1,5 +1,5 @@
 #!/bin/sh
-# usage: VCFSegSubjects
+# usage: PhenoSubjects
 #  -caseval <arg>                case value in dbGaP phenotype file (e.g.
 #                                Case)
 #  -ccv,--casecontrolvar <arg>   case/control variable in dbGaP phenotype
@@ -50,19 +50,33 @@
 # #DESIREDSEX=2
 # OUTFILE=GenomicPsychiatryCohort
 
-PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-SAMPLEVAR=SAMPID
-DISEASENAME=Schizophrenia
-DISEASEVAR=PRIMARY_DISEASE
-CASECONTROLVAR=ANALYSIS_CAT
-CASEVAL=Case
-CONTROLVAL=Control
-#DESIREDSEX=F -ds $DESIREDSEX
-OUTFILE=SchizophreniaSwedish_Sklar
+# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+# SAMPLEVAR=SAMPID
+# DISEASENAME=Schizophrenia
+# DISEASEVAR=PRIMARY_DISEASE
+# CASECONTROLVAR=ANALYSIS_CAT
+# CASEVAL=Case
+# CONTROLVAL=Control
+# #DESIREDSEX=F -ds $DESIREDSEX
+# OUTFILE=SchizophreniaSwedish_Sklar
 
-java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegSubjects  \
-     -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+## with DISEASENAME and DISEASEVAR
+#java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+#     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+#     > $OUTFILE.labels.txt
+
+PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
+PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
+SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
+SAMPLEVAR=SAMPLE_ID CASECONTROLVAR=pheno_250.1 CASEVAL=2 CONTROLVAL=1
+MINMAF=0.01
+MAXNOCALLS=100
+#DESIREDSEX=M
+OUTFILE=HLA_PHEWAS_T1D
+
+## without DISEASENAME or DISEASEVAR
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
      > $OUTFILE.labels.txt
-

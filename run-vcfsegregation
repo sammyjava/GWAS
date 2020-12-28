@@ -24,7 +24,7 @@
 #                                used in VCF file)
 #  -sv,--samplevar <arg>         study sample ID variable in dbGaP samples
 #                                file (e.g. SAMPID; required if -sf)
-#  -vf,--vcffile <arg>           VCF file
+#  -vcf,--vcffile <arg>           VCF file
 
 # ## Maps to old reference
 # ## /erdos/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
@@ -42,8 +42,8 @@
 # OUTFILE=AREDS_Affy
 
 # ## NOTE: no disease name or disease var
-# java -server -Xms1g -Xmx600g -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-#      -vf $VCFFILE \
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+#      -vcf $VCFFILE \
 #      -pf $PHENOFILE \
 #      -sf $SAMPLEFILE \
 #      -sv $SAMPLEVAR \
@@ -65,34 +65,46 @@
 # DESIREDSEX=
 # OUTFILE=GenomicPsychiatryCohort
 
-VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
-PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-SAMPLEVAR=SAMPID
-DISEASENAME=Schizophrenia
-DISEASEVAR=PRIMARY_DISEASE
-CASECONTROLVAR=ANALYSIS_CAT
-CASEVAL=Case
-CONTROLVAL=Control
-MINMAF=0.01
-MAXNOCALLS=100
-DESIREDSEX=M
-OUTFILE=SchizophreniaSwedish_Sklar.$DESIREDSEX
+# VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
+# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+# SAMPLEVAR=SAMPID
+# DISEASENAME=Schizophrenia
+# DISEASEVAR=PRIMARY_DISEASE
+# CASECONTROLVAR=ANALYSIS_CAT
+# CASEVAL=Case
+# CONTROLVAL=Control
+# MINMAF=0.01
+# MAXNOCALLS=100
+# DESIREDSEX=M
+# OUTFILE=SchizophreniaSwedish_Sklar.$DESIREDSEX
 
-java -server -Xms1g -Xmx600g -XX:+UseG1GC -XX:+UseStringDeduplication -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-     -vf $VCFFILE \
-     -pf $PHENODIR/$PHENOFILE \
-     -sf $PHENODIR/$SAMPLEFILE \
-     -sv $SAMPLEVAR \
-     -dn $DISEASENAME \
-     -dv $DISEASEVAR \
-     -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-     -ds $DESIREDSEX \
-     > $OUTFILE.seg.txt
+## with DISEASENAME and DISEASEVAR
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+#      -vcf $VCFFILE \
+#      -pf $PHENODIR/$PHENOFILE \
+#      -sf $PHENODIR/$SAMPLEFILE \
+#      -sv $SAMPLEVAR \
+#      -dn $DISEASENAME \
+#      -dv $DISEASEVAR \
+#      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+#      -ds $DESIREDSEX \
+#      > $OUTFILE.seg.txt
 
 # VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
 # LABELFILE="../pangenomics/SCD/labels.txt"
 # OUTFILE="HBB"
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vcf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
 
-# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
+## this experiment has amino acid calls, moved into a list format file
+GENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/GenotypeFiles
+LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1.GRU-NPU/HLA_PHEWAS.list
+LABELFILE=HLA_PHEWAS_T1D.labels.txt
+MINMAF=0.01
+MAXNOCALLS=100
+#DESIREDSEX=M
+OUTFILE=HLA_PHEWAS_T1D
+
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.seg.txt
+

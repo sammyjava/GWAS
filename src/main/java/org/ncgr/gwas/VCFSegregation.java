@@ -69,7 +69,7 @@ public class VCFSegregation {
         phenoFileOption.setRequired(false);
         options.addOption(phenoFileOption);
 	//
-        Option vcfFileOption = new Option("vf", "vcffile", true, "VCF file");
+        Option vcfFileOption = new Option("vcf", "vcffile", true, "VCF file");
         vcfFileOption.setRequired(true);
         options.addOption(vcfFileOption);
 	//
@@ -96,6 +96,10 @@ public class VCFSegregation {
 	Option desiredSexOption = new Option("ds", "desiredsex", true, "phenotype value of desired sex (e.g. M or 1)");
 	desiredSexOption.setRequired(false);
 	options.addOption(desiredSexOption);
+	//
+	Option desiredRaceOption = new Option("dr", "desiredrace", true, "phenotype value of desired race (e.g. W)");
+	desiredRaceOption.setRequired(false);
+	options.addOption(desiredRaceOption);
 	//
 	Option minMAFOption = new Option("maf", "minmaf", true, "minimum MAF for a locus to be output ("+DEFAULT_MIN_MAF+")");
 	minMAFOption.setRequired(false);
@@ -143,7 +147,7 @@ public class VCFSegregation {
         // true if case, false if control, keyed by sample ID used in VCF
         Map<String,Boolean> subjectStatus = new HashMap<>();
         if (cmd.hasOption("labelfile")) {
-            // read sample labels from the instance tab-delimited file. Comment lines start with #.
+            // read sample labels from a tab-delimited file. Comment lines start with #.
             // 28304	case
             // 60372	ctrl
             String labelFilename = cmd.getOptionValue("labelfile");
@@ -176,6 +180,12 @@ public class VCFSegregation {
             if (cmd.hasOption("desiredsex")) {
                 desiredSexValue = cmd.getOptionValue("desiredsex");
             }
+
+	    String desiredRaceValue = null;
+	    if (cmd.hasOption("desiredrace")) {
+		desiredRaceValue = cmd.getOptionValue("desiredrace");
+	    }
+
             // the optional sample file relates dbGaP_Subject_ID in the phenotypes file to the sample ID used in the VCF file
             //
             // # Study accession: phs000473.v2.p2
@@ -237,6 +247,7 @@ public class VCFSegregation {
             boolean headerLine = true;
             int ccVarOffset = -1;
             int sexVarOffset = -1;
+	    int raceVarOffset = -1;
             int diseaseVarOffset = -1;
             BufferedReader phenoReader = new BufferedReader(new FileReader(cmd.getOptionValue("phenofile")));
             while ((line=phenoReader.readLine())!=null) {
@@ -250,7 +261,8 @@ public class VCFSegregation {
                     for (int i=0; i<vars.length; i++) {
                         if (vars[i].equals(ccVar)) ccVarOffset = i;
                         if (vars[i].equals("SEX")) sexVarOffset = i;
-                        if (diseaseVar!=null && vars[i].equals(diseaseVar)) diseaseVarOffset = i;
+			if (vars[i].equals("RACE")) raceVarOffset = i;
+			if (diseaseVar!=null && vars[i].equals(diseaseVar)) diseaseVarOffset = i;
                     }
                     headerLine = false;
                 } else {
@@ -269,15 +281,17 @@ public class VCFSegregation {
                     }
                     String ccValue = data[ccVarOffset];
                     String sexValue = "";
-                    if (sexVarOffset>0) sexValue = data[sexVarOffset];
+		    String raceValue  = "";
                     String diseaseValue = null;
-                    if (diseaseVar!=null) diseaseValue = data[diseaseVarOffset];
+                    if (sexVarOffset>0) sexValue = data[sexVarOffset];
+		    if (raceVarOffset>0) raceValue = data[raceVarOffset];
+		    if (diseaseVarOffset>0) diseaseValue = data[diseaseVarOffset];
                     boolean isCase = ccValue.equals(caseValue);
                     boolean isControl = ccValue.equals(controlValue);
                     boolean isDisease = diseaseVar==null || diseaseValue.contains(diseaseName);
-                    boolean isDesiredSex = true;
-                    if (desiredSexValue!=null) isDesiredSex = sexValue.equals(desiredSexValue);
-                    if (((isDisease && isCase) || isControl) && isDesiredSex) {
+		    boolean isDesiredSex = desiredSexValue==null || sexValue==null || sexValue.equals(desiredSexValue);
+		    boolean isDesiredRace = desiredRaceValue==null || raceValue==null || raceValue.equals(desiredRaceValue);
+                    if (((isDisease && isCase) || isControl) && isDesiredSex && isDesiredRace) {
                         for (String sampleId : sampleIds) {
                             subjectStatus.put(sampleId, isCase); // true = case
                         }

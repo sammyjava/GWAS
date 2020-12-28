@@ -30,15 +30,16 @@ import htsjdk.variant.vcf.VCFHeader;
 import org.mskcc.cbio.portal.stats.FisherExact;
 
 /**
- * Loads a VCF file and spits out the subject IDs with case or control status using the same inputs as VCFSegregation.
- * Cases and controls are given by a phenotype file in dbGaP format. Sex may also be specified.
+ * Spits out the subject IDs with case or control status from a dbGaP study.
+ * Cases and control status for the given disease are given by a phenotype file in dbGaP format.
+ * Sex may also be specified.
  *
  * @author Sam Hokin
  */
-public class VCFSegSubjects {
+public class PhenoSubjects {
 
     /**
-     * Main class outputs a tab-delimited list of the contingency matrix for each locus, plus Fisher's exact test p value.
+     * Main class outputs a tab-delimited list of the subject IDs and case/control status.
      */
     public static void main(String[] args) throws FileNotFoundException, IOException {
         Options options = new Options();
@@ -61,6 +62,7 @@ public class VCFSegSubjects {
         Option ccVarOption = new Option("ccv", "casecontrolvar", true, "case/control variable in dbGaP phenotype file (e.g. ANALYSIS_CAT)");
 	ccVarOption.setRequired(true);
         options.addOption(ccVarOption);
+	// 
         // NOTE: this only allows a single value of case or control in the segregating variable! (Some files have control=1, say, and several case values.)
         Option caseValueOption = new Option("caseval", true, "case value in dbGaP phenotype file (e.g. Case)");
         caseValueOption.setRequired(true);
@@ -85,19 +87,23 @@ public class VCFSegSubjects {
 	Option desiredSexOption = new Option("ds", "desiredsex", true, "phenotype value of desired sex (e.g. M or 1)");
 	desiredSexOption.setRequired(false);
 	options.addOption(desiredSexOption);
+	//
+	Option desiredRaceOption = new Option("dr", "desiredrace", true, "phenotype value of desired race (e.g. W)");
+	desiredRaceOption.setRequired(false);
+	options.addOption(desiredRaceOption);
 	
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.err.println(e.getMessage());
-            formatter.printHelp("VCFSegSubjects", options);
+            formatter.printHelp("PhenoSubjects", options);
             System.exit(1);
             return;
         }
 
         // spit out help if nothing supplied
         if (cmd.getOptions().length==0) {
-            formatter.printHelp("VCFSegSubjects", options);
+            formatter.printHelp("PhenoSubjects", options);
             System.exit(1);
             return;
         }
@@ -121,13 +127,21 @@ public class VCFSegSubjects {
 	    desiredSexValue = cmd.getOptionValue("desiredsex");
 	}
 
-	// the optional sample file relates dbGaP_Subject_ID in the phenotypes file to the sample ID used in the VCF file
+	String desiredRaceValue = null;
+	if (cmd.hasOption("desiredrace")) {
+	    desiredRaceValue = cmd.getOptionValue("desiredrace");
+	}
+
+	// the optional sample file relates dbGaP_Subject_ID in the phenotypes file to the sample ID.
 	//
 	// dbGaP_Subject_ID dbGaP_Sample_ID	BioSample Accession  SUBJID	SAMPID	SAMP_SOURCE SOURCE_SAMPID SAMPLE_USE
 	// 1284423	    1836728	        SAMN03897975	     PT-1S8D	28278	KAROLINSKA  28278	  Seq_DNA_WholeExome; Seq_DNA_SNP_CNV
 	//
-	// NOTE: there may be MORE THAN ONE LINE for the same dbGaP_Subject_ID! We'll assume that SAMPLE IDs are unique.
+	// phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
+	// dbGaP_Subject_ID  dbGaP_Sample_ID  BioSample Accession  SUBJECT_ID  SAMPLE_ID
+	// 3110589           3768892          SAMN13583397         1           42
 	//
+	// NOTE: there may be MORE THAN ONE LINE for the same dbGaP_Subject_ID! We'll assume that SAMPLE IDs are unique.
 	Map<String,String> sampleIdMap = new HashMap<>(); // keyed by dbGaPSubjectId=dbGaP_Subject_ID
 	if (cmd.hasOption("samplefile")) {
 	    BufferedReader sampleReader = new BufferedReader(new FileReader(cmd.getOptionValue("samplefile")));
@@ -155,20 +169,25 @@ public class VCFSegSubjects {
             }
 	}
 
-        // the required phenotypes file provides case/control information per sample
+        // the required phenotypes file provides case/control information per sample.
 	// 
 	// with DISEASE column:
 	// dbGaP_Subject_ID SUBJID  SEX PRIMARY_DISEASE   ANALYSIS_CAT SITE  Coverage_Pass
 	// 1287483          PT-FJ7E M   Bipolar_Disorder  Case         BROAD N
 	//
 	// without DISEASE column:
-	// dbGaP_SubjID HASGENSP AMDSTAT CATARACT COR ID2  LPSCBASE LCOR  LCORBASE LCORSCORE LNUC  LNUCBASE LNUCSCORE LPSC  LPSCSCORE NUC PSC RPSCBASE RCOR  RCORBASE RCORSCORE RNUC  RNUCBASE RNUCSCORE RPSC  RPSCSCORE
-	// 53181        Y        7       5        1   1890 0        COR-C 0.6      8.83      NUC-B 1.95     4.34      PSC-C 0         1   2   0        COR-B 7.2      13.7      NUC-B 2.6      4.35      PSC-C 0
-        Map<String,Boolean> subjectStatus = new HashMap<>(); // true if case, false if control, keyed by study ID used in VCF
+	// dbGaP_SubjID HASGENSP AMDSTAT CATARACT COR ID2  LPSCBASE LCOR  LCORBASE LCORSCORE LNUC  LNUCBASE LNUCSCORE LPSC  LPSCSCORE NUC PSC ...
+	// 53181        Y        7       5        1   1890 0        COR-C 0.6      8.83      NUC-B 1.95     4.34      PSC-C 0         1   2   ...
+	//
+	// ##                            phv00421304.v1.p1.c1  phv00421305.v1.p1.c1  phv00421306.v1.p1.c1  phv00421307.v1.p1.c1  phv00421308.v1.p1.c1  phv00421309.v1.p1.c1  phv00421310.v1.p1.c1  ...
+	// dbGaP_Subject_ID  SUBJECT_ID  age_alt               SEX                   RACE                  PC1                   PC2                   pheno_008             pheno_008.5 ...
+	// 3110589           1           74                    M                     W                     -0.01                 0.00                  1                     1           ...
+        Map<String,Boolean> subjectStatus = new HashMap<>(); // true if case, false if control, keyed by study ID
         String line = "";
         boolean headerLine = true;
         int ccVarOffset = -1;
 	int sexVarOffset = -1;
+	int raceVarOffset = -1;
 	int diseaseVarOffset = -1;
         int nCases = 0;
         int nControls = 0;
@@ -184,12 +203,14 @@ public class VCFSegSubjects {
                 for (int i=0; i<vars.length; i++) {
                     if (vars[i].equals(ccVar)) ccVarOffset = i;
 		    if (vars[i].equals("SEX")) sexVarOffset = i;
+		    if (vars[i].equals("RACE")) raceVarOffset = i;
 		    if (diseaseVar!=null && vars[i].equals(diseaseVar)) diseaseVarOffset = i;
                 }
 		if (debug) {
 		    System.err.println("diseaseVar="+diseaseVar+" offset="+diseaseVarOffset);
 		    System.err.println("ccVar="+ccVar+" offset="+ccVarOffset);
 		    System.err.println("SEX offset="+sexVarOffset);
+		    System.err.println("RACE offset="+raceVarOffset);
 		}
                 headerLine = false;
             } else {
@@ -197,7 +218,7 @@ public class VCFSegSubjects {
 		String dbGaPSubjectId = data[0]; // assume first column is dbGaP_Subject_ID, which I hope is always true
 		List<String> sampleIds = new ArrayList<>(); // we may have more than one sample ID per dbGaP_Subject_ID!
 		if (sampleIdMap.size()==0) {
-		    // no samples file, so assume ID in the second column is used in the VCF
+		    // no samples file, so assume ID in the second column is study ID
 		    sampleIds.add(data[1]);
 		} else {
 		    // spin through the records to get all the sample IDs for this dbGaPSubjectId
@@ -208,14 +229,17 @@ public class VCFSegSubjects {
 		}
                 String ccValue = data[ccVarOffset];
 		String sexValue = null;
-		if (sexVarOffset>0) sexValue = data[sexVarOffset];
+		String raceValue = null;
 		String diseaseValue = null;
+		if (sexVarOffset>0) sexValue = data[sexVarOffset];
+		if (raceVarOffset>0) raceValue = data[raceVarOffset];
 		if (diseaseVarOffset>0) diseaseValue = data[diseaseVarOffset];
                 boolean isCase = ccValue.equals(caseValue);
                 boolean isControl = ccValue.equals(controlValue);
 		boolean isDisease = diseaseValue==null || diseaseValue.contains(diseaseName);
 		boolean isDesiredSex = desiredSexValue==null || sexValue==null || sexValue.equals(desiredSexValue);
-                if (((isDisease && isCase) || isControl) && isDesiredSex) {
+		boolean isDesiredRace = desiredRaceValue==null || raceValue==null || raceValue.equals(desiredRaceValue);
+                if (((isDisease && isCase) || isControl) && isDesiredSex && isDesiredRace) {
 		    for (String sampleId : sampleIds) {
 			subjectStatus.put(sampleId, isCase); // true = case
 		    }
@@ -227,10 +251,6 @@ public class VCFSegSubjects {
 		}
             }
         }
-
-	// DEBUG
-	if (debug) System.out.println(nCases+" cases, "+nControls+" controls");
-	//
 
         for (String sampleId : subjectStatus.keySet()) {
             boolean isCase = subjectStatus.get(sampleId);
