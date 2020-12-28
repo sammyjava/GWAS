@@ -1,0 +1,19 @@
+#!/bin/sh
+# usage: ListSegregation
+#  -lf,--labelfile <arg>     label file containing case/control labels for
+#                            each subject
+#  -list,--listfile <arg>    PLINK list output file
+#  -maf,--minmaf <arg>       minimum MAF for a locus to be output (0.01)
+#  -mnc,--maxnocalls <arg>   maximum number of no-calls for a locus to be
+#                            output (1000)
+
+## this experiment has amino acid calls, moved into a list format file
+GENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/GenotypeFiles
+LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1.GRU-NPU/HLA_PHEWAS.list
+LABELFILE=HLA_PHEWAS_T1D.labels.txt
+MINMAF=0.01
+MAXNOCALLS=100
+#DESIREDSEX=M
+OUTFILE=HLA_PHEWAS_T1D
+
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.ListSegregation -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.listseg.txt
