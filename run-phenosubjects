@@ -70,11 +70,16 @@
 PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
 PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
 SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
-SAMPLEVAR=SAMPLE_ID CASECONTROLVAR=pheno_250.1 CASEVAL=2 CONTROLVAL=1
+SAMPLEVAR=SAMPLE_ID
+CASEVAL=2
+CONTROLVAL=1
 MINMAF=0.01
 MAXNOCALLS=100
-#DESIREDSEX=M
-OUTFILE=HLA_PHEWAS_T1D
+
+## comma-separated list of phenotype IDs
+CASECONTROLVAR="pheno_241.2,pheno_555,pheno_695.42,pheno_714.1,pheno_250.1"
+
+OUTFILE=HLA_PHEWAS_5pheno
 
 ## without DISEASENAME or DISEASEVAR
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \

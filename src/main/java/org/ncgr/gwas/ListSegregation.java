@@ -89,7 +89,7 @@ public class ListSegregation {
             // 60372	ctrl
             String labelFilename = cmd.getOptionValue("labelfile");
             BufferedReader labelReader = new BufferedReader(new FileReader(labelFilename));
-            String labelLine = null;
+            String labelLine;
             while ((labelLine=labelReader.readLine())!=null) {
                 if (labelLine.startsWith("#")) continue;
 		String[] fields = labelLine.split("\t");
@@ -106,6 +106,7 @@ public class ListSegregation {
 	// 6	AA_A_9_30018537_FS	AP	42	42	58	58	76	76	107	107	114
 	Set<String> sampleNames = new HashSet<>();
 	BufferedReader listReader = new BufferedReader(new FileReader(cmd.getOptionValue("listfile")));
+        String listLine;
 	while ((listLine=listReader.readLine())!=null) {
 	    String[] fields = listLine.split("\\t");
 	    String contig = fields[0];

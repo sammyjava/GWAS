@@ -31,7 +31,7 @@ import org.mskcc.cbio.portal.stats.FisherExact;
 
 /**
  * Spits out the subject IDs with case or control status from a dbGaP study.
- * Cases and control status for the given disease are given by a phenotype file in dbGaP format.
+ * Cases and control status for the given disease(s) are given by a phenotype file in dbGaP format.
  * Sex may also be specified.
  *
  * @author Sam Hokin
@@ -59,7 +59,7 @@ public class PhenoSubjects {
         phenoFileOption.setRequired(true);
         options.addOption(phenoFileOption);
         //
-        Option ccVarOption = new Option("ccv", "casecontrolvar", true, "case/control variable in dbGaP phenotype file (e.g. ANALYSIS_CAT)");
+        Option ccVarOption = new Option("ccv", "casecontrolvar", true, "(comma-separated) case/control variables in dbGaP phenotype file (e.g. ANALYSIS_CAT or pheno_241.2)");
 	ccVarOption.setRequired(true);
         options.addOption(ccVarOption);
 	// 
@@ -108,7 +108,9 @@ public class PhenoSubjects {
             return;
         }
 
-	String ccVar = cmd.getOptionValue("casecontrolvar");
+        // comma-separated case-control variables
+	String[] ccVars = cmd.getOptionValue("casecontrolvar").split(",");
+        
 	String caseValue = cmd.getOptionValue("caseval");
 	String controlValue = cmd.getOptionValue("controlval");
 	String sampleVar = cmd.getOptionValue("samplevar");
@@ -185,10 +187,10 @@ public class PhenoSubjects {
         Map<String,Boolean> subjectStatus = new HashMap<>(); // true if case, false if control, keyed by study ID
         String line = "";
         boolean headerLine = true;
-        int ccVarOffset = -1;
 	int sexVarOffset = -1;
 	int raceVarOffset = -1;
 	int diseaseVarOffset = -1;
+        int[] ccVarOffsets = new int[ccVars.length];
         int nCases = 0;
         int nControls = 0;
 	BufferedReader phenoReader = new BufferedReader(new FileReader(cmd.getOptionValue("phenofile")));
@@ -201,19 +203,22 @@ public class PhenoSubjects {
                 // variable header
                 String[] vars = line.split("\t");
                 for (int i=0; i<vars.length; i++) {
-                    if (vars[i].equals(ccVar)) ccVarOffset = i;
+                    for (int j=0; j<ccVars.length; j++) {
+                        if (vars[i].equals(ccVars[j])) ccVarOffsets[j] = i;
+                    }
 		    if (vars[i].equals("SEX")) sexVarOffset = i;
 		    if (vars[i].equals("RACE")) raceVarOffset = i;
 		    if (diseaseVar!=null && vars[i].equals(diseaseVar)) diseaseVarOffset = i;
                 }
 		if (debug) {
 		    System.err.println("diseaseVar="+diseaseVar+" offset="+diseaseVarOffset);
-		    System.err.println("ccVar="+ccVar+" offset="+ccVarOffset);
+		    System.err.println("ccVars="+ccVars+" offsets="+ccVarOffsets);
 		    System.err.println("SEX offset="+sexVarOffset);
 		    System.err.println("RACE offset="+raceVarOffset);
 		}
                 headerLine = false;
             } else {
+                // subject/sample line
                 String[] data = line.split("\t");
 		String dbGaPSubjectId = data[0]; // assume first column is dbGaP_Subject_ID, which I hope is always true
 		List<String> sampleIds = new ArrayList<>(); // we may have more than one sample ID per dbGaP_Subject_ID!
@@ -227,15 +232,19 @@ public class PhenoSubjects {
 			if (dgsId.equals(dbGaPSubjectId)) sampleIds.add(sampleId);
 		    }
 		}
-                String ccValue = data[ccVarOffset];
 		String sexValue = null;
 		String raceValue = null;
 		String diseaseValue = null;
 		if (sexVarOffset>0) sexValue = data[sexVarOffset];
 		if (raceVarOffset>0) raceValue = data[raceVarOffset];
 		if (diseaseVarOffset>0) diseaseValue = data[diseaseVarOffset];
-                boolean isCase = ccValue.equals(caseValue);
-                boolean isControl = ccValue.equals(controlValue);
+                boolean isCase = false;
+                boolean isControl = true;
+                for (int j=0; j<ccVars.length; j++) {
+                    String ccValue = data[ccVarOffsets[j]];
+                    isCase = isCase || ccValue.equals(caseValue); // case if ONE of the columns shows case
+                    isControl = isControl && ccValue.equals(controlValue); // control if ALL of the columns show control
+                }
 		boolean isDisease = diseaseValue==null || diseaseValue.contains(diseaseName);
 		boolean isDesiredSex = desiredSexValue==null || sexValue==null || sexValue.equals(desiredSexValue);
 		boolean isDesiredRace = desiredRaceValue==null || raceValue==null || raceValue.equals(desiredRaceValue);
@@ -252,6 +261,7 @@ public class PhenoSubjects {
             }
         }
 
+        // two-column output
         for (String sampleId : subjectStatus.keySet()) {
             boolean isCase = subjectStatus.get(sampleId);
             if (isCase) {
