@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -210,7 +211,7 @@ public class PhenoSubjects {
                 }
 		if (debug) {
 		    System.err.println("diseaseVar="+diseaseVar+" offset="+diseaseVarOffset);
-		    System.err.println("ccVars="+ccVars+" offsets="+ccVarOffsets);
+		    System.err.println("ccVars="+Arrays.asList(ccVars)+" offsets="+Arrays.asList(ccVarOffsets));
 		    System.err.println("SEX offset="+sexVarOffset);
 		    System.err.println("RACE offset="+raceVarOffset);
 		}
@@ -265,14 +266,29 @@ public class PhenoSubjects {
         }
 
         // two-column output
-        String header = "sampleId";
+        String header = "sample\tcomb";
         for (int j=0; j<ccVars.length; j++)  {
             header += "\t"+ccVars[j];
         }
         System.out.println(header);
         for (String sampleId : subjectStatus.keySet()) {
             String[] status = subjectStatus.get(sampleId);
-            String output = sampleId;
+	    boolean anyCase = false;
+	    boolean allControl = true;
+            for (int j=0; j<status.length; j++) {
+		if (status[j].equals("case")) {
+		    anyCase = true;
+		} else {
+		    allControl = allControl && status[j].equals("ctrl");
+		}
+	    }
+	    String combined = "unkn";
+	    if (anyCase) {
+		combined = "case";
+	    } else if (allControl) {
+		combined = "ctrl";
+	    }
+            String output = sampleId+"\t"+combined;
             for (int j=0; j<status.length; j++) {
                 output += "\t"+status[j];
             }

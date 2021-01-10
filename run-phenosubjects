@@ -76,7 +76,7 @@ CONTROLVAL=1
 MINMAF=0.01
 MAXNOCALLS=100
 
-## comma-separated list of phenotype IDs
+## comma-separated list of 5 phenotype IDs
 CASECONTROLVAR="pheno_241.2,pheno_555,pheno_695.42,pheno_714.1,pheno_250.1"
 
 OUTFILE=HLA_PHEWAS_5pheno
