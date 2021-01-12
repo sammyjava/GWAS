@@ -31,7 +31,7 @@ import htsjdk.variant.vcf.VCFHeader;
 import org.mskcc.cbio.portal.stats.FisherExact;
 
 /**
- * Spits out the subject IDs with case or control status, or disease value, from a dbGaP study.
+ * Spits out the subject IDs with case or control status per disease value, from a dbGaP study.
  * Disease status are given by a phenotype file in dbGaP format.
  * Sex and Race may also be specified as filters.
  *
@@ -266,29 +266,14 @@ public class PhenoSubjects {
         }
 
         // two-column output
-        String header = "sample\tcomb";
+        String header = "sample";
         for (int j=0; j<ccVars.length; j++)  {
             header += "\t"+ccVars[j];
         }
         System.out.println(header);
         for (String sampleId : subjectStatus.keySet()) {
             String[] status = subjectStatus.get(sampleId);
-	    boolean anyCase = false;
-	    boolean allControl = true;
-            for (int j=0; j<status.length; j++) {
-		if (status[j].equals("case")) {
-		    anyCase = true;
-		} else {
-		    allControl = allControl && status[j].equals("ctrl");
-		}
-	    }
-	    String combined = "unkn";
-	    if (anyCase) {
-		combined = "case";
-	    } else if (allControl) {
-		combined = "ctrl";
-	    }
-            String output = sampleId+"\t"+combined;
+            String output = sampleId;
             for (int j=0; j<status.length; j++) {
                 output += "\t"+status[j];
             }
