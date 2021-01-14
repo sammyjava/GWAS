@@ -76,10 +76,16 @@ CONTROLVAL=1
 MINMAF=0.01
 MAXNOCALLS=100
 
-## comma-separated list of 5 phenotype IDs
-CASECONTROLVAR="pheno_241.2,pheno_555,pheno_695.42,pheno_714.1,pheno_250.1"
+## HLA_PHEWAS
+## Graves	pheno_241.2
+## IBD		pheno_555
+## lupus	pheno_695.42
+## rheum	pheno_714.1
+## T1D		pheno_250.1
 
-OUTFILE=HLA_PHEWAS_5pheno
+## comma-separated list of 5 phenotype IDs
+CASECONTROLVAR=pheno_250.1
+OUTFILE=HLA_PHEWAS_T1D
 
 ## without DISEASENAME or DISEASEVAR
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \

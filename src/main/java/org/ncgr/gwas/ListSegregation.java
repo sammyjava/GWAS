@@ -81,21 +81,26 @@ public class ListSegregation {
             maxNoCalls = Integer.parseInt(cmd.getOptionValue("maxnocalls"));
         }
 
-        // true if case, false if control, keyed by sample ID used in LIST file
+	// read sample labels from a tab-delimited file.
+	// sample   diseaseId
+	// 28304    case
+	// 60372    ctrl
+	// 45987    unkn
+        // store if case or control; true if case, false if control
         Map<String,Boolean> subjectStatus = new HashMap<>();
         if (cmd.hasOption("labelfile")) {
-            // read sample labels from a tab-delimited file. Comment lines start with #.
-            // 28304	case
-            // 60372	ctrl
             String labelFilename = cmd.getOptionValue("labelfile");
             BufferedReader labelReader = new BufferedReader(new FileReader(labelFilename));
             String labelLine;
             while ((labelLine=labelReader.readLine())!=null) {
                 if (labelLine.startsWith("#")) continue;
 		String[] fields = labelLine.split("\t");
-		if (fields.length==2) {
-		    String sampleId = fields[0];
-		    boolean isCase = fields[1].equals("case");
+		if (fields[0].equals("sample")) continue;
+		String sampleId = fields[0];
+		boolean isCase = fields[1].equals("case");
+		boolean isControl = fields[1].equals("ctrl");
+		if (isCase || isControl) {
+		    // ignore unknown status samples
 		    subjectStatus.put(sampleId, isCase);
 		}
             }

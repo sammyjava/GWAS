@@ -34,6 +34,7 @@ import org.mskcc.cbio.portal.stats.FisherExact;
  * Spits out the subject IDs with case or control status per disease value, from a dbGaP study.
  * Disease status are given by a phenotype file in dbGaP format.
  * Sex and Race may also be specified as filters.
+ * Subjects with neither case nor control status are marked "unkn".
  *
  * @author Sam Hokin
  */
@@ -211,7 +212,7 @@ public class PhenoSubjects {
                 }
 		if (debug) {
 		    System.err.println("diseaseVar="+diseaseVar+" offset="+diseaseVarOffset);
-		    System.err.println("ccVars="+Arrays.asList(ccVars)+" offsets="+Arrays.asList(ccVarOffsets));
+		    for (int i=0; i<ccVars.length; i++) System.err.println("ccVar="+ccVars[i]+"\toffset="+ccVarOffsets[i]);
 		    System.err.println("SEX offset="+sexVarOffset);
 		    System.err.println("RACE offset="+raceVarOffset);
 		}

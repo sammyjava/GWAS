@@ -7,13 +7,21 @@
 #  -mnc,--maxnocalls <arg>   maximum number of no-calls for a locus to be
 #                            output (1000)
 
+## HLA_PHEWAS
+## Graves	pheno_241.2
+## IBD		pheno_555
+## lupus	pheno_695.42
+## rheum	pheno_714.1
+## T1D		pheno_250.1
+
 ## this experiment has amino acid calls, moved into a list format file
 GENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/GenotypeFiles
 LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1.GRU-NPU/HLA_PHEWAS.list
-LABELFILE=HLA_PHEWAS_T1D.labels.txt
+
 MINMAF=0.01
 MAXNOCALLS=100
-#DESIREDSEX=M
-OUTFILE=HLA_PHEWAS_T1D
+
+OUTFILE=HLA_PHEWAS_rheum
+LABELFILE=$OUTFILE.labels.txt
 
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.ListSegregation -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.listseg.txt
