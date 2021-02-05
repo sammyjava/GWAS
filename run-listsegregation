@@ -21,7 +21,8 @@ LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1
 MINMAF=0.01
 MAXNOCALLS=100
 
-OUTFILE=HLA_PHEWAS_rheum
+SUFFIX=T1D
+OUTFILE=HLA_PHEWAS_$SUFFIX
 LABELFILE=$OUTFILE.labels.txt
 
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.ListSegregation -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.listseg.txt

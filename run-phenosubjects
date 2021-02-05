@@ -2,18 +2,22 @@
 # usage: PhenoSubjects
 #  -caseval <arg>                case value in dbGaP phenotype file (e.g.
 #                                Case)
-#  -ccv,--casecontrolvar <arg>   case/control variable in dbGaP phenotype
-#                                file (e.g. ANALYSIS_CAT)
+#  -ccv,--casecontrolvar <arg>   (comma-separated) case/control variables in
+#                                dbGaP phenotype file (e.g. ANALYSIS_CAT or
+#                                pheno_241.2)
 #  -controlval <arg>             control value in dbGaP phenotype file (e.g.
 #                                Control)
 #  -d,--debug                    enable debug mode
 #  -dn,--diseasename <arg>       desired case disease name in dbGaP
 #                                phenotype file (e.g. Schizophrenia;
 #                                required if -dv)
+#  -dr,--desiredrace <arg>       phenotype value of desired race (e.g. W)
 #  -ds,--desiredsex <arg>        phenotype value of desired sex (e.g. M or
 #                                1)
 #  -dv,--diseasevar <arg>        disease variable in dbGaP phenotype file
 #                                (e.g. PRIMARY_DISEASE; required if -dn)
+#  -mc,--maxcases <arg>          maxiumum number of cases for cases=controls
+#                                output (and no unknowns)
 #  -pf,--phenofile <arg>         dbGaP phenotype file
 #  -sf,--samplefile <arg>        dbGaP samples file (needed if contains
 #                                mapping from dbGaP_Subject_ID to sample ID
@@ -75,19 +79,25 @@ CASEVAL=2
 CONTROLVAL=1
 MINMAF=0.01
 MAXNOCALLS=100
+MAXCASES=400
 
 ## HLA_PHEWAS
 ## Graves	pheno_241.2
 ## IBD		pheno_555
-## lupus	pheno_695.42
-## rheum	pheno_714.1
+## systemic lupus erythematosus	pheno_695.42
+## rheumatoid arthritus	pheno_714.1
 ## T1D		pheno_250.1
+##
+## ankylosing spondylitus pheno_715.2
+## multiple sclerosis pheno_335
+## Sicca syndrome pheno_709.2
+## celiac disease pheno_557.1
 
-## comma-separated list of 5 phenotype IDs
-CASECONTROLVAR=pheno_250.1
+## comma-separated list of phenotype IDs
 OUTFILE=HLA_PHEWAS_T1D
+CASECONTROLVAR=pheno_250.1
 
 ## without DISEASENAME or DISEASEVAR
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
-     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
      > $OUTFILE.labels.txt

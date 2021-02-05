@@ -1,0 +1,58 @@
+#!/bin/sh
+# usage: PhenoSubjects
+#  -caseval <arg>                case value in dbGaP phenotype file (e.g.
+#                                Case)
+#  -ccv,--casecontrolvar <arg>   (comma-separated) case/control variables in
+#                                dbGaP phenotype file (e.g. ANALYSIS_CAT or
+#                                pheno_241.2)
+#  -controlval <arg>             control value in dbGaP phenotype file (e.g.
+#                                Control)
+#  -dn,--diseasename <arg>       desired case disease name in dbGaP
+#                                phenotype file (e.g. Schizophrenia;
+#                                required if -dv)
+#  -dr,--desiredrace <arg>       phenotype value of desired race (e.g. W)
+#  -ds,--desiredsex <arg>        phenotype value of desired sex (e.g. M or
+#                                1)
+#  -dv,--diseasevar <arg>        disease variable in dbGaP phenotype file
+#                                (e.g. PRIMARY_DISEASE; required if -dn)
+#  -mc,--maxcases <arg>          maxiumum number of cases for cases=controls
+#                                output (and no unknowns)
+#  -os,--othersubjects <arg>     output case/control subjects other than
+#                                those in the given labels file
+#  -pf,--phenofile <arg>         dbGaP phenotype file
+#  -sf,--samplefile <arg>        dbGaP samples file (needed if contains
+#                                mapping from dbGaP_Subject_ID to sample ID
+#                                used in VCF file)
+#  -sv,--samplevar <arg>         study sample ID variable in dbGaP samples
+#                                file (e.g. SAMPID; required if -sf)
+
+PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
+PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
+SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
+SAMPLEVAR=SAMPLE_ID
+CASEVAL=2
+CONTROLVAL=1
+MINMAF=0.01
+MAXNOCALLS=100
+
+## HLA_PHEWAS
+## Graves	pheno_241.2
+## IBD		pheno_555
+## systemic lupus erythematosus	pheno_695.42
+## rheumatoid arthritus	pheno_714.1
+## T1D		pheno_250.1
+##
+## ankylosing spondylitus pheno_715.2
+## multiple sclerosis pheno_335
+## Sicca syndrome pheno_709.2
+## celiac disease pheno_557.1
+
+## comma-separated list of phenotype IDs
+OUTFILE=HLA_PHEWAS_Graves
+CASECONTROLVAR=pheno_241.2
+MAXCASES=100
+
+## without DISEASENAME or DISEASEVAR
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+     -os $OUTFILE.labels.txt -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
+     > $OUTFILE.testing.txt
