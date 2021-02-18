@@ -286,34 +286,36 @@ public class PhenoSubjects {
 		    }
 		}
                 // disease, sex, race
+		boolean hasDisease = diseaseVarOffset>0;
+		boolean hasSex = sexVarOffset>0;
+		boolean hasRace = raceVarOffset>0;
 		String diseaseValue = null;
 		String sexValue = null;
 		String raceValue = null;
-		if (diseaseVarOffset>0) diseaseValue = data[diseaseVarOffset];
-		if (sexVarOffset>0) sexValue = data[sexVarOffset];
-		if (raceVarOffset>0) raceValue = data[raceVarOffset];
-                boolean isDisease = diseaseValue==null || diseaseValue.contains(diseaseName);
-		boolean isDesiredSex = desiredSexValue==null || sexValue==null || sexValue.equals(desiredSexValue);
-		boolean isDesiredRace = desiredRaceValue==null || raceValue==null || raceValue.equals(desiredRaceValue);
-                if (isDisease && isDesiredSex && isDesiredRace) {
-                    // subject status for each of the ccVars
-                    String status[] = new String[ccVars.length];
-                    for (int j=0; j<ccVars.length; j++) {
-                        String ccValue = data[ccVarOffsets[j]];
-                        boolean isCase = ccValue.equals(caseValue); // case for this ccVar
-                        boolean isControl = ccValue.equals(controlValue); // control for this ccVar
-                        if (isCase) {
-                            status[j] = "case";
-                        } else if (isControl) {
-                            status[j] = "ctrl";
-                        } else {
-                            status[j] = "unkn";
-                        }
-                    }
-                    // potentially multiple sampleIds for same subject
-                    for (String sampleId : sampleIds) {
-                        subjectStatus.put(sampleId, status);
+		if (hasDisease) diseaseValue = data[diseaseVarOffset];
+		if (hasSex) sexValue = data[sexVarOffset];
+		if (hasRace) raceValue = data[raceVarOffset];
+		boolean blankDisease = hasDisease && diseaseValue.trim().length()==0;
+                boolean isDisease = hasDisease && diseaseValue.contains(diseaseName);
+		boolean isDesiredSex = hasSex && sexValue.equals(desiredSexValue);
+		boolean isDesiredRace = hasRace && raceValue.equals(desiredRaceValue);
+		// subject status for each of the ccVars
+		String status[] = new String[ccVars.length];
+		for (int j=0; j<ccVars.length; j++) {
+		    String ccValue = data[ccVarOffsets[j]];
+		    boolean isCase = isDisease && ccValue.equals(caseValue);  // case for this ccVar
+		    boolean isControl = (isDisease || blankDisease) && ccValue.equals(controlValue); // control for this ccVar
+		    if (isCase) {
+			status[j] = "case";
+		    } else if (isControl) {
+			status[j] = "ctrl";
+		    } else {
+			status[j] = "unkn";
 		    }
+		}
+		// potentially multiple sampleIds for same subject
+		for (String sampleId : sampleIds) {
+		    subjectStatus.put(sampleId, status);
 		}
             }
         }

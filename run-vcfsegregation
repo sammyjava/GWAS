@@ -4,33 +4,44 @@
 #                                Case)
 #  -ccv,--casecontrolvar <arg>   case/control variable in dbGaP phenotype
 #                                file (e.g. ANALYSIS_CAT)
+#  -chr,--chromosome <arg>       output loci only on the given chromosome
 #  -controlval <arg>             control value in dbGaP phenotype file (e.g.
 #                                Control)
 #  -dn,--diseasename <arg>       desired case disease name in dbGaP
 #                                phenotype file (e.g. Schizophrenia;
 #                                required if -dv)
+#  -dr,--desiredrace <arg>       phenotype value of desired race (e.g. W)
 #  -ds,--desiredsex <arg>        phenotype value of desired sex (e.g. M or
 #                                1)
 #  -dv,--diseasevar <arg>        disease variable in dbGaP phenotype file
 #                                (e.g. PRIMARY_DISEASE; required if -dn)
+#  -end,--end <arg>              end location for output loci (requires -chr
+#                                and -start)
+#  -ip,--ignorephase             ignore phasing, so that A|T and T|A are
+#                                counted as same genotype (false)
 #  -lf,--labelfile <arg>         label file containing case/control labels
 #                                for each subject
-#  -maf,--minmaf <arg>           minimum MAF for a locus to be output (0.01)
+#  -maf,--minmaf <arg>           minimum MAF for a locus to be output (0.0)
 #  -mnc,--maxnocalls <arg>       maximum number of no-calls for a locus to
-#                                be output (1000)
+#                                be output (0=all output)
 #  -pf,--phenofile <arg>         dbGaP phenotype file
 #  -sf,--samplefile <arg>        dbGaP samples file (needed if contains
 #                                mapping from dbGaP_Subject_ID to sample ID
 #                                used in VCF file)
+#  -start,--start <arg>          start location for output loci (requires
+#                                -chr and -end)
 #  -sv,--samplevar <arg>         study sample ID variable in dbGaP samples
 #                                file (e.g. SAMPID; required if -sf)
-#  -vcf,--vcffile <arg>           VCF file
+#  -vcf,--vcffile <arg>          VCF file
 
+JAVAARGS="-server -Xms10g -Xmx500g -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
+
+###############################################################################################################################################################
 # ## Maps to old reference
-# ## /erdos/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
-# ## /erdos/NCBI/VCF/AREDS/Illumina_gru_merge.vcf.gz
-# VCFFILE=/erdos/shokin/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles
+# ## /erdos/ncbi/VCF/AREDS/Affy_gru_merge.vcf.gz
+# ## /erdos/ncbi/VCF/AREDS/Illumina_gru_merge.vcf.gz
+# VCFFILE=/erdos/shokin/ncbi/VCF/AREDS/Affy_gru_merge.vcf.gz
+# PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles
 # PHENOFILE=$PHENODIR/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt
 # SAMPLEFILE=$PHENODIR/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt
 # SAMPLEVAR=specnum
@@ -40,9 +51,8 @@
 # MINMAF=0.01
 # MAXNOCALLS=100
 # OUTFILE=AREDS_Affy
-
 # ## NOTE: no disease name or disease var
-# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+# java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
 #      -vcf $VCFFILE \
 #      -pf $PHENOFILE \
 #      -sf $SAMPLEFILE \
@@ -50,8 +60,8 @@
 #      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
 #      > $OUTFILE.seg.txt
 
-# VCFFILE=/erdos/shokin/NCBI/VCF/GenomicPsychiatryCohort/c1_gpc.vcf.gz
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
+# VCFFILE=/erdos/shokin/ncbi/VCF/GenomicPsychiatryCohort/c1_gpc.vcf.gz
+# PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
 # PHENOFILE=phs001020.v1.pht005783.v1.p1.c1.GPC_WGS_Subject_Phenotypes.DS-SZRD.txt
 # SAMPLEFILE=phs001020.v1.pht005782.v1.p1.GPC_WGS_Sample.MULTI.txt
 # SAMPLEVAR=SAMPID
@@ -65,46 +75,48 @@
 # DESIREDSEX=
 # OUTFILE=GenomicPsychiatryCohort
 
-# VCFFILE=/erdos/shokin/NCBI/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-# SAMPLEVAR=SAMPID
-# DISEASENAME=Schizophrenia
-# DISEASEVAR=PRIMARY_DISEASE
-# CASECONTROLVAR=ANALYSIS_CAT
-# CASEVAL=Case
-# CONTROLVAL=Control
-# MINMAF=0.01
-# MAXNOCALLS=100
-# DESIREDSEX=M
-# OUTFILE=SchizophreniaSwedish_Sklar.$DESIREDSEX
-
+###############################################################################################################################################################
+VCFFILE=/erdos/shokin/ncbi/VCF/SchizophreniaSwedish_Sklar/swe.vcf.gz
+PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+SAMPLEVAR=SAMPID
+DISEASENAME=Schizophrenia
+DISEASEVAR=PRIMARY_DISEASE
+CASECONTROLVAR=ANALYSIS_CAT
+CASEVAL=Case
+CONTROLVAL=Control
+MINMAF=0.00
+MAXNOCALLS=0
+OUTFILE=SCZ_HLA
+CHR=6
+START=25726329
+END=33768897
 ## with DISEASENAME and DISEASEVAR
-# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
-#      -vcf $VCFFILE \
-#      -pf $PHENODIR/$PHENOFILE \
-#      -sf $PHENODIR/$SAMPLEFILE \
-#      -sv $SAMPLEVAR \
-#      -dn $DISEASENAME \
-#      -dv $DISEASEVAR \
-#      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-#      -ds $DESIREDSEX \
-#      > $OUTFILE.seg.txt
+java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
+     -vcf $VCFFILE \
+     -pf $PHENODIR/$PHENOFILE \
+     -sf $PHENODIR/$SAMPLEFILE \
+     -sv $SAMPLEVAR \
+     -dn $DISEASENAME -dv $DISEASEVAR \
+     -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
+     -mnc $MAXNOCALLS -maf $MINMAF \
+     -chr $CHR -start $START -end $END \
+     > $OUTFILE.seg.txt
 
+###############################################################################################################################################################
 # VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
 # LABELFILE="../pangenomics/SCD/labels.txt"
 # OUTFILE="HBB"
-# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vcf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
+# java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf 0.0 -vcf $VCFFILE -lf $LABELFILE > $OUTFILE.seg.txt
 
-## this experiment has amino acid calls, moved into a list format file
-GENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/GenotypeFiles
-LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1.GRU-NPU/HLA_PHEWAS.list
-LABELFILE=HLA_PHEWAS_T1D.labels.txt
-MINMAF=0.01
-MAXNOCALLS=100
-#DESIREDSEX=M
-OUTFILE=HLA_PHEWAS_T1D
+# ## this experiment has amino acid calls, moved into a list format file
+# GENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/GenotypeFiles
+# LISTFILE=$GENODIR/phg001446.v1.P3DT.genotype-calls-matrixfmt.custom_markerset.c1.GRU-NPU/HLA_PHEWAS.list
+# LABELFILE=HLA_PHEWAS_T1D.labels.txt
+# MINMAF=0.01
+# MAXNOCALLS=100
+# OUTFILE=HLA_PHEWAS_T1D
 
-java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.seg.txt
+# java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation -ip -maf $MINMAF -mnc $MAXNOCALLS -list $LISTFILE -lf $LABELFILE > $OUTFILE.seg.txt
 

@@ -7,7 +7,6 @@
 #                                pheno_241.2)
 #  -controlval <arg>             control value in dbGaP phenotype file (e.g.
 #                                Control)
-#  -d,--debug                    enable debug mode
 #  -dn,--diseasename <arg>       desired case disease name in dbGaP
 #                                phenotype file (e.g. Schizophrenia;
 #                                required if -dv)
@@ -18,6 +17,8 @@
 #                                (e.g. PRIMARY_DISEASE; required if -dn)
 #  -mc,--maxcases <arg>          maxiumum number of cases for cases=controls
 #                                output (and no unknowns)
+#  -os,--othersubjects <arg>     output case/control subjects other than
+#                                those in the given labels file
 #  -pf,--phenofile <arg>         dbGaP phenotype file
 #  -sf,--samplefile <arg>        dbGaP samples file (needed if contains
 #                                mapping from dbGaP_Subject_ID to sample ID
@@ -26,10 +27,10 @@
 #                                file (e.g. SAMPID; required if -sf)
 
 # ## maps to old reference
-# ## /erdos/shokin/NCBI/VCF/AREDS/Affy_gru_merge.vcf.gz
-# ## /erdos/shokin/NCBI/VCF/AREDS/Illumina_gru_merge.vcf.gz
-# PHENOFILE="/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
-# SAMPLEFILE="/erdos/shokin/NCBI/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
+# ## /erdos/shokin/ncbi/VCF/AREDS/Affy_gru_merge.vcf.gz
+# ## /erdos/shokin/ncbi/VCF/AREDS/Illumina_gru_merge.vcf.gz
+# PHENOFILE="/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht000371.v2.p1.c2.amdlensphenotype.GRU.txt"
+# SAMPLEFILE="/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs000001.AREDS.v3.p1.c2.GRU/PhenotypeFiles/phs000001.v3.pht002478.v1.p1.AREDS_Sample.MULTI.txt"
 # SAMPLEVAR=specnum
 # CASECONTROLVAR=AMDSTAT
 # CASEVAL=11
@@ -42,7 +43,7 @@
 #      > $OUTFILE.labels.txt
 
 
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
+# PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs001020.GenomicPsychiatryCohort.v1.p1.c1.DS-SZRD/PhenotypeFiles
 # PHENOFILE=phs001020.v1.pht005783.v1.p1.c1.GPC_WGS_Subject_Phenotypes.DS-SZRD.txt
 # SAMPLEFILE=phs001020.v1.pht005782.v1.p1.GPC_WGS_Sample.MULTI.txt
 # SAMPLEVAR=SAMPID
@@ -54,50 +55,48 @@
 # #DESIREDSEX=2
 # OUTFILE=GenomicPsychiatryCohort
 
-# PHENODIR=/erdos/shokin/NCBI/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
-# PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
-# SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
-# SAMPLEVAR=SAMPID
-# DISEASENAME=Schizophrenia
-# DISEASEVAR=PRIMARY_DISEASE
-# CASECONTROLVAR=ANALYSIS_CAT
-# CASEVAL=Case
-# CONTROLVAL=Control
-# #DESIREDSEX=F -ds $DESIREDSEX
-# OUTFILE=SchizophreniaSwedish_Sklar
-
+PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+SAMPLEVAR=SAMPID
+DISEASENAME=Schizophrenia
+DISEASEVAR=PRIMARY_DISEASE
+CASECONTROLVAR=ANALYSIS_CAT
+CASEVAL=Case
+CONTROLVAL=Control
+MAXCASES=2000
+OUTFILE=SC4000
 ## with DISEASENAME and DISEASEVAR
-#java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
-#     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
-#     > $OUTFILE.labels.txt
-
-PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
-PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
-SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
-SAMPLEVAR=SAMPLE_ID
-CASEVAL=2
-CONTROLVAL=1
-MINMAF=0.01
-MAXNOCALLS=100
-MAXCASES=400
-
-## HLA_PHEWAS
-## Graves	pheno_241.2
-## IBD		pheno_555
-## systemic lupus erythematosus	pheno_695.42
-## rheumatoid arthritus	pheno_714.1
-## T1D		pheno_250.1
-##
-## ankylosing spondylitus pheno_715.2
-## multiple sclerosis pheno_335
-## Sicca syndrome pheno_709.2
-## celiac disease pheno_557.1
-
-## comma-separated list of phenotype IDs
-OUTFILE=HLA_PHEWAS_T1D
-CASECONTROLVAR=pheno_250.1
-
-## without DISEASENAME or DISEASEVAR
 java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
-     -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
-     > $OUTFILE.labels.txt
+    -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
+    > $OUTFILE.labels.txt
+
+
+# PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
+# PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
+# SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
+# SAMPLEVAR=SAMPLE_ID
+# CASEVAL=2
+# CONTROLVAL=1
+# MAXCASES=400
+
+# ## HLA_PHEWAS
+# ## Graves	pheno_241.2
+# ## IBD		pheno_555
+# ## systemic lupus erythematosus	pheno_695.42
+# ## rheumatoid arthritus	pheno_714.1
+# ## T1D		pheno_250.1
+# ##
+# ## ankylosing spondylitus pheno_715.2
+# ## multiple sclerosis pheno_335
+# ## Sicca syndrome pheno_709.2
+# ## celiac disease pheno_557.1
+
+# ## comma-separated list of phenotype IDs
+# OUTFILE=HLA_PHEWAS_T1D
+# CASECONTROLVAR=pheno_250.1
+
+# ## without DISEASENAME or DISEASEVAR
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+#      -d -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
+#      > $OUTFILE.labels.txt

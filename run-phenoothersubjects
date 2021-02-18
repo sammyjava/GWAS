@@ -26,14 +26,22 @@
 #  -sv,--samplevar <arg>         study sample ID variable in dbGaP samples
 #                                file (e.g. SAMPID; required if -sf)
 
-PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
-PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
-SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
-SAMPLEVAR=SAMPLE_ID
-CASEVAL=2
-CONTROLVAL=1
-MINMAF=0.01
-MAXNOCALLS=100
+PHENODIR=/erdos/shokin/ncbi/dbGaP-20036/PhenoGenotypeFiles/RootStudyConsentSet_phs000473.SchizophreniaSwedish_Sklar.v2.p2.c1.GRU/PhenotypeFiles
+PHENOFILE=phs000473.v2.pht002600.v2.p2.c1.Schizophrenia_Swedish_Subject_Phenotypes.GRU.txt
+SAMPLEFILE=phs000473.v2.pht002599.v2.p2.Schizophrenia_Swedish_Sample.MULTI.txt
+SAMPLEVAR=SAMPID
+DISEASENAME=Schizophrenia
+DISEASEVAR=PRIMARY_DISEASE
+CASECONTROLVAR=ANALYSIS_CAT
+CASEVAL=Case
+CONTROLVAL=Control
+MAXCASES=2000
+LABELSFILE=SCZ4000
+## with DISEASENAME and DISEASEVAR
+java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+    -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -dn $DISEASENAME -dv $DISEASEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
+    -os $LABELSFILE.labels.txt \
+    > $LABELSFILE.testing.labels.txt
 
 ## HLA_PHEWAS
 ## Graves	pheno_241.2
@@ -46,13 +54,19 @@ MAXNOCALLS=100
 ## multiple sclerosis pheno_335
 ## Sicca syndrome pheno_709.2
 ## celiac disease pheno_557.1
+# PHENODIR=/erdos/shokin/ncbi/dbGaP-22329/PhenoGenotypeFiles/RootStudyConsentSet_phs001949.P3DT.v1.p1.c1.GRU-NPU/PhenotypeFiles
+# PHENOFILE=phs001949.v1.pht009706.v1.p1.c1.P3DT_Subject_Phenotypes.GRU-NPU.txt
+# SAMPLEFILE=phs001949.v1.pht009705.v1.p1.P3DT_Sample.MULTI.txt
+# SAMPLEVAR=SAMPLE_ID
+# CASEVAL=2
+# CONTROLVAL=1
+# MINMAF=0.01
+# MAXNOCALLS=100
+# OUTFILE=HLA_PHEWAS_T1D
+# CASECONTROLVAR=pheno_250.1
+# MAXCASES=53
 
-## comma-separated list of phenotype IDs
-OUTFILE=HLA_PHEWAS_Graves
-CASECONTROLVAR=pheno_241.2
-MAXCASES=100
-
-## without DISEASENAME or DISEASEVAR
-java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
-     -os $OUTFILE.labels.txt -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
-     > $OUTFILE.testing.txt
+# ## without DISEASENAME or DISEASEVAR
+# java -server -cp "build/install/GWAS/lib/*" org.ncgr.gwas.PhenoSubjects  \
+#      -os $OUTFILE.labels.txt -pf $PHENODIR/$PHENOFILE -sf $PHENODIR/$SAMPLEFILE -sv $SAMPLEVAR -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL -mc $MAXCASES \
+#      > $OUTFILE.testing.labels.txt

@@ -25,12 +25,13 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import htsjdk.samtools.util.CloseableIterator;
+
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.GenotypeType;
 import htsjdk.variant.variantcontext.GenotypesContext;
 import htsjdk.variant.variantcontext.VariantContext;
-
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 
@@ -42,9 +43,6 @@ import htsjdk.variant.vcf.VCFHeader;
  * @author Sam Hokin
  */
 public class VCFSegregation {
-    static int DEFAULT_MAX_NOCALLS = 1000;
-    static double DEFAULT_MIN_MAF = 0.01;
-
     static DecimalFormat percf = new DecimalFormat("0.000%");
     static DecimalFormat countf = new DecimalFormat("00000");
 
@@ -101,11 +99,11 @@ public class VCFSegregation {
 	desiredRaceOption.setRequired(false);
 	options.addOption(desiredRaceOption);
 	//
-	Option minMAFOption = new Option("maf", "minmaf", true, "minimum MAF for a locus to be output ("+DEFAULT_MIN_MAF+")");
+	Option minMAFOption = new Option("maf", "minmaf", true, "minimum MAF for a locus to be output (0.0)");
 	minMAFOption.setRequired(false);
 	options.addOption(minMAFOption);
         //
-        Option maxNoCallsOption = new Option("mnc", "maxnocalls", true, "maximum number of no-calls for a locus to be output ("+DEFAULT_MAX_NOCALLS+")");
+        Option maxNoCallsOption = new Option("mnc", "maxnocalls", true, "maximum number of no-calls for a locus to be output (0=all output)");
         maxNoCallsOption.setRequired(false);
         options.addOption(maxNoCallsOption);
         //
@@ -116,6 +114,18 @@ public class VCFSegregation {
         Option ignorePhaseOption = new Option("ip", "ignorephase", false, "ignore phasing, so that A|T and T|A are counted as same genotype (false)");
         ignorePhaseOption.setRequired(false);
         options.addOption(ignorePhaseOption);
+	//
+	Option chromosomeOption = new Option("chr", "chromosome", true, "output loci only on the given chromosome");
+	chromosomeOption.setRequired(false);
+	options.addOption(chromosomeOption);
+	//
+	Option startOption = new Option("start", "start", true, "start location for output loci (requires -chr and -end)");
+	startOption.setRequired(false);
+	options.addOption(startOption);
+	//
+	Option endOption = new Option("end", "end", true, "end location for output loci (requires -chr and -start)");
+	endOption.setRequired(false);
+	options.addOption(endOption);
 	
         try {
             cmd = parser.parse(options, args);
@@ -134,17 +144,28 @@ public class VCFSegregation {
         }
 
         // some general parameters
-        double minMAF = DEFAULT_MIN_MAF;
-        if (cmd.hasOption("minmaf")) {
-            minMAF = Double.parseDouble(cmd.getOptionValue("minmaf"));
-        }
-        int maxNoCalls = DEFAULT_MAX_NOCALLS;
-        if (cmd.hasOption("maxnocalls")) {
-            maxNoCalls = Integer.parseInt(cmd.getOptionValue("maxnocalls"));
-        }
+        double minMAF = 0.0;
+        if (cmd.hasOption("minmaf")) minMAF = Double.parseDouble(cmd.getOptionValue("minmaf"));
+        int maxNoCalls = 0;
+        if (cmd.hasOption("maxnocalls")) maxNoCalls = Integer.parseInt(cmd.getOptionValue("maxnocalls"));
         boolean ignorePhase = cmd.hasOption("ignorephase");
 
-        // true if case, false if control, keyed by sample ID used in VCF
+	// region-limiting options if (chr==null) then all regions
+	String chr = null;
+	int chrStart = 0;
+	int chrEnd = Integer.MAX_VALUE;
+	if (cmd.hasOption("chr")) {
+	    chr = cmd.getOptionValue("chr");
+	    if (cmd.hasOption("start")) {
+		chrStart = Integer.parseInt(cmd.getOptionValue("start"));
+	    }
+	    if (cmd.hasOption("end")) {
+		chrEnd = Integer.parseInt(cmd.getOptionValue("end"));
+	    }
+	}
+
+	// read samples
+        // status = true if case, false if control, keyed by sample ID used in VCF
         Map<String,Boolean> subjectStatus = new HashMap<>();
         if (cmd.hasOption("labelfile")) {
             // read sample labels from a tab-delimited file. Comment lines start with #.
@@ -166,26 +187,14 @@ public class VCFSegregation {
             reader.close();
         } else {
             // read samples from a set of dbGaP files
-            String ccVar = cmd.getOptionValue("casecontrolvar");
-            String caseValue = cmd.getOptionValue("caseval");
-            String controlValue = cmd.getOptionValue("controlval");
-            String sampleVar = cmd.getOptionValue("samplevar");
-            String diseaseVar = null;
-            String diseaseName = null;
-            if (cmd.hasOption("diseasevar")) {
-                diseaseVar = cmd.getOptionValue("diseasevar");
-                diseaseName = cmd.getOptionValue("diseasename");
-            }
-            String desiredSexValue = null;
-            if (cmd.hasOption("desiredsex")) {
-                desiredSexValue = cmd.getOptionValue("desiredsex");
-            }
-
-	    String desiredRaceValue = null;
-	    if (cmd.hasOption("desiredrace")) {
-		desiredRaceValue = cmd.getOptionValue("desiredrace");
-	    }
-
+            final String ccVar = cmd.getOptionValue("casecontrolvar");
+            final String caseValue = cmd.getOptionValue("caseval");
+            final String controlValue = cmd.getOptionValue("controlval");
+            final String sampleVar = cmd.getOptionValue("samplevar");
+            final String  diseaseVar = cmd.getOptionValue("diseasevar");
+            final String diseaseName = cmd.getOptionValue("diseasename");
+            final String desiredSexValue = cmd.getOptionValue("desiredsex");
+	    final String desiredRaceValue = cmd.getOptionValue("desiredrace");
             // the optional sample file relates dbGaP_Subject_ID in the phenotypes file to the sample ID used in the VCF file
             //
             // # Study accession: phs000473.v2.p2
@@ -243,21 +252,23 @@ public class VCFSegregation {
             // dbGaP_Subject_ID SUBJID  SEX PRIMARY_DISEASE   ANALYSIS_CAT SITE  Coverage_Pass
             // 1287483          PT-FJ7E M   Bipolar_Disorder  Case         BROAD N
             //
-            String line = "";
             boolean headerLine = true;
+	    // temp here because need to be final in parallel loop
             int ccVarOffset = -1;
             int sexVarOffset = -1;
 	    int raceVarOffset = -1;
             int diseaseVarOffset = -1;
+	    System.err.println("Reading pheno lines from "+cmd.getOptionValue("phenofile"));
+	    String phenoLine;
             BufferedReader phenoReader = new BufferedReader(new FileReader(cmd.getOptionValue("phenofile")));
-            while ((line=phenoReader.readLine())!=null) {
-                if (line.startsWith("#")) {
+            while ((phenoLine=phenoReader.readLine())!=null) {
+                if (phenoLine.startsWith("#")) {
                     continue; // comment
-                } else if (line.trim().length()==0) {
+                } else if (phenoLine.trim().length()==0) {
                     continue; // blank
                 } else if (headerLine) {
                     // variable header
-                    String[] vars = line.split("\t");
+                    String[] vars = phenoLine.split("\t");
                     for (int i=0; i<vars.length; i++) {
                         if (vars[i].equals(ccVar)) ccVarOffset = i;
                         if (vars[i].equals("SEX")) sexVarOffset = i;
@@ -266,7 +277,8 @@ public class VCFSegregation {
                     }
                     headerLine = false;
                 } else {
-                    String[] data = line.split("\t");
+		    // process this pheno line
+                    String[] data = phenoLine.split("\t");
                     String dbGaPSubjectId = data[0]; // assume first column is dbGaP_Subject_ID, which I hope is always true
                     List<String> sampleIds = new ArrayList<>(); // we may have more than one sample ID per dbGaP_Subject_ID!
                     if (sampleIdMap.size()==0) {
@@ -296,10 +308,22 @@ public class VCFSegregation {
                             subjectStatus.put(sampleId, isCase); // true = case
                         }
                     }
-                }
-            }
+		}
+	    }
+	    // total the cases/controls
+	    int caseCount = 0;
+	    int ctrlCount = 0;
+	    for (boolean status : subjectStatus.values()) {
+		if (status) {
+		    caseCount++;
+		} else {
+		    ctrlCount++;
+		}
+	    }
+	    System.err.println("Found "+caseCount+" cases and "+ctrlCount+" controls in pheno file.");
         }
         // find the desired sample names as they appear in the VCF file
+	System.err.println("Reading sample names from "+cmd.getOptionValue("vcffile"));
 	VCFFileReader vcfReader = new VCFFileReader(new File(cmd.getOptionValue("vcffile")));
         VCFHeader vcfHeader = vcfReader.getFileHeader();
         List<String> vcfSampleNames = vcfHeader.getSampleNamesInOrder(); // all subjects in the VCF
@@ -335,53 +359,57 @@ public class VCFSegregation {
             if (!found) System.err.println("Subject "+sampleName+" and "+doubleSampleName+" NOT FOUND in VCF.");
 	}
 	System.err.println("Found "+nCases+" cases and "+nControls+" controls in VCF file.");
+	// calculate GWAS stats for each VariantContext
+
+	// CloseableIterator<VariantContext> 	iterator()
+	// Returns an iterator over all records in this VCF/BCF file.
+	// CloseableIterator<VariantContext> 	query(java.lang.String chrom, int start, int end)
+	// Queries for records within the region specified.
 	
-	// spin through the VCF file and get stats on qualified loci
-	for (VariantContext vc : vcfReader) {
+	CloseableIterator<VariantContext> iterator;
+	if (chr!=null) {
+	    System.err.println("Loading qualified loci within "+chr+":"+chrStart+"-"+chrEnd+" from "+cmd.getOptionValue("vcffile"));
+	    iterator = vcfReader.query(chr, chrStart, chrEnd);
+	} else {
+	    System.err.println("Loading qualified loci from "+cmd.getOptionValue("vcffile"));
+	    iterator = vcfReader.iterator();
+	}
+	for (VariantContext vc : iterator.toList()) {
             String contig = vc.getContig();
-            int start = vc.getStart();
-            int end = vc.getEnd();
+	    int start = vc.getStart();
+	    int end = vc.getEnd();
 	    String source = vc.getSource();
 	    String id = vc.getID();
-	    // no-call count criterion
+	    // no-call count filter
 	    int noCallCount = vc.getNoCallCount();
-	    if (noCallCount>maxNoCalls) continue;
-	    // require at least two genotpes
-	    List<Genotype> genotypes = vc.getGenotypes();
-	    if (genotypes.size()<2) continue;
-	    // minimum MAF criterion
-	    int calledCount = vc.getCalledChrCount();
-	    int numAboveMAF = 0;
-	    for (Allele a : vc.getAlleles()) {
-		int count = vc.getCalledChrCount(a);
-		double maf = (double)count / (double)calledCount;
-		if (maf>minMAF) numAboveMAF++; // includes max allele, usually REF
-	    }
-	    if (numAboveMAF<2) continue;
+	    if (maxNoCalls>0 && noCallCount>maxNoCalls) continue;
+	    // minimum MAF filter
+	    double maf = getMAF(vc);
+	    if (maf<minMAF) continue;
+	    // requirements satisfied, continue
+	    List<Genotype> genotypes = vc.getGenotypes(); // one per sample!
 	    // get counts for each genotype per case/control
 	    Map<String,Integer> caseCounts = new HashMap<>();
 	    Map<String,Integer> controlCounts = new HashMap<>();
 	    for (Genotype g : genotypes) {
-		if (g.isNoCall()) continue;
 		String gString = g.getGenotypeString();
-                if (ignorePhase) {
-                    // sort the alleles in alphabetic order as unphased genotype
-                    gString = gString.replace("|","/");
-                    String[] alleles = gString.split("/");
-                    if (alleles.length>1 && !alleles[0].equals(alleles[1])) {
-                        TreeSet<String> sortedAlleles = new TreeSet<>(Arrays.asList(alleles));
-                        boolean first = true;
-                        gString = "";
-                        for (String allele : sortedAlleles) {
-                            if (first) {
-                                first = false;
-                            } else {
-                                gString += "/";
-                            }
-                            gString += allele;
-                        }
-                    }
-                }
+		if (ignorePhase) {
+		    // sort the alleles in alphabetic order as unphased genotype
+		    String[] alleles = gString.split("|");
+		    if (alleles.length>1 && !alleles[0].equals(alleles[1])) {
+			TreeSet<String> sortedAlleles = new TreeSet<>(Arrays.asList(alleles));
+			boolean first = true;
+			gString = "";
+			for (String allele : sortedAlleles) {
+			    if (first) {
+				first = false;
+			    } else {
+				gString += "/";
+			    }
+			    gString += allele;
+			}
+		    }
+		}
 		if (!caseCounts.containsKey(gString)) caseCounts.put(gString, 0);
 		if (!controlCounts.containsKey(gString)) controlCounts.put(gString, 0);
 		String sampleName = g.getSampleName();
@@ -393,8 +421,8 @@ public class VCFSegregation {
 	    }
 	    // order genotypes by decreasing control counts by using string sorting
 	    TreeSet<String> countsGenotypes = new TreeSet<>();
-	    for (String gString : controlCounts.keySet()) {
-		countsGenotypes.add(countf.format(controlCounts.get(gString))+":"+gString);
+	    for (String gs : controlCounts.keySet()) {
+		countsGenotypes.add(countf.format(controlCounts.get(gs))+":"+gs);
 	    }
 	    // Cochran-Armitage test
 	    int numRows = 2;
@@ -413,25 +441,35 @@ public class VCFSegregation {
 	    int j = 0;
 	    for (String cg : countsGenotypes.descendingSet()) {
 		String[] parts = cg.split(":");
-		String gString = parts[1];
+		String gs = parts[1];
 		if (j>0) {
 		    genotypeString += ":";
 		    controlString += ":";
 		    caseString += ":";
 		}
-		genotypeString += gString;
-		controlString += controlCounts.get(gString);
-		caseString += caseCounts.get(gString);
-		countTable[0][j] = controlCounts.get(gString);
-		countTable[1][j] = caseCounts.get(gString);
+		genotypeString += gs;
+		controlString += controlCounts.get(gs);
+		caseString += caseCounts.get(gs);
+		countTable[0][j] = controlCounts.get(gs);
+		countTable[1][j] = caseCounts.get(gs);
 		j++;
 	    }
-	    double pValue = ca.test(countTable);
-	    // we can still get a few cases with 0 alternative counts
-	    if (Double.isNaN(pValue)) continue;
-	    // output the line
-	    SegRecord rec = new SegRecord(contig, start, id, genotypeString, caseString, controlString, noCallCount, ca.standardStatistic, pValue);
-	    System.out.println(rec);
+	    try {
+		double pValue = ca.test(countTable);
+		// we can still get a few cases with 0 alternative counts
+		if (Double.isNaN(pValue)) continue;
+		// print this record
+		System.out.println(new SegRecord(contig, start, id, genotypeString, maf, noCallCount, caseString, controlString, ca.standardStatistic, pValue));
+	    } catch (ArithmeticException ex) {
+		// do nothing, divide by zero
+	    }
 	}
+    }
+    
+    /**
+     * Determine the minor allele frequency from a VariantContext
+     */
+    public static double getMAF(VariantContext vc) {
+	return (double)(vc.getHetCount()+vc.getHomVarCount()) / (double)vc.getCalledChrCount();
     }
 }
