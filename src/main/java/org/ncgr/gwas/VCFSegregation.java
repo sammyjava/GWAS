@@ -465,11 +465,27 @@ public class VCFSegregation {
 	    }
 	}
     }
-    
+
     /**
-     * Determine the minor allele frequency from a VariantContext
+     * Return the minor allele frequency from a VariantContext, defined as the fraction of non-majority alleles / all alleles.
+     * NOTE: this handles the common case where the REF allele is NOT the majority.
      */
     public static double getMAF(VariantContext vc) {
-	return (double)(vc.getHetCount()+vc.getHomVarCount()) / (double)vc.getCalledChrCount();
+	int majorityCount = 0;
+	Allele majorityAllele = null;
+        for (Allele a : vc.getAlleles()) {
+	    int count = vc.getCalledChrCount(a);
+	    if (count>majorityCount) {
+		majorityCount = count;
+		majorityAllele = a;
+	    }
+        }
+	int minorityCount = 0;
+	for (Allele a : vc.getAlleles()) {
+	    if (!a.equals(majorityAllele)) {
+		minorityCount += vc.getCalledChrCount(a);
+	    }
+	}
+	return (double)minorityCount / (double)vc.getCalledChrCount();
     }
 }

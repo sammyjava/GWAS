@@ -86,12 +86,12 @@ DISEASEVAR=PRIMARY_DISEASE
 CASECONTROLVAR=ANALYSIS_CAT
 CASEVAL=Case
 CONTROLVAL=Control
-MINMAF=0.00
+MINMAF=0.01
 MAXNOCALLS=0
-OUTFILE=SCZ_HLA
-CHR=6
-START=25726329
-END=33768897
+OUTFILE=SCZ
+#CHR=6
+#START=25726329
+#END=33768897
 ## with DISEASENAME and DISEASEVAR
 java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
      -vcf $VCFFILE \
@@ -101,8 +101,10 @@ java $JAVAARGS -cp "build/install/GWAS/lib/*" org.ncgr.gwas.VCFSegregation $1 \
      -dn $DISEASENAME -dv $DISEASEVAR \
      -ccv $CASECONTROLVAR -caseval $CASEVAL -controlval $CONTROLVAL \
      -mnc $MAXNOCALLS -maf $MINMAF \
-     -chr $CHR -start $START -end $END \
      > $OUTFILE.seg.txt
+
+#     -chr $CHR -start $START -end $END \
+#     > $OUTFILE.seg.txt
 
 ###############################################################################################################################################################
 # VCFFILE="../pangenomics/SCD/HBB.vcf.gz"
