@@ -7,9 +7,15 @@ source("snpData.R")
 ##
 ## colnames(seg) = c("chr","pos","id","ref","alts","caseString","controlString","caseNoCalls","controlNoCalls","statistic","p")
 ##
-plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALSE, labelSNP=FALSE, showGenes=FALSE, showDensity=FALSE, ymin=0, ymax=0, pSig=5e-8) {
+plot.p.region = function(seg=seg, chr="0",
+                         start=0, end=0, idStart=NULL, idEnd=NULL, geneStart=NULL, geneEnd=NULL,
+                         gene=NULL, title=NULL,
+                         label=FALSE, labelSNP=FALSE, showGenes=FALSE, showDensity=FALSE,
+                         ymin=0, ymax=0, pSig=5e-8, minMAF=0.0,
+                         posList=c()) {
 
     sigColor = "red"
+    listColor = "blue"
 
     if (!is.null(gene)) {
         geneRecord = genes[genes$name==gene,]
@@ -17,15 +23,27 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
         start = geneRecord$start
         end = geneRecord$end
     }
-        
-    if (chr!="0") {
+
+    if (chr=="0") {
+        chr = seg$chr[1]
+        if (start==0) {
+            start = min(seg$pos)
+        }
+        if (end==0) {
+            end = max(seg$pos)
+        }
+    } else if (!is.null(idStart) && !is.null(idEnd)) {
+        start = seg$pos[seg$id==idStart]
+        end = seg$pos[seg$id==idEnd]
+    } else if (!is.null(geneStart) && !is.null(geneEnd)) {
+        start = genes$start[genes$name==geneStart]
+        end = genes$end[genes$name==geneEnd]
+    } else {
         if (start==0) {
             start = min(seg$pos[seg$chr==chr])
         } else {
             start = min(seg$pos[seg$chr==chr & seg$pos>=start])
         }
-    }
-    if (chr!="0") {
         if (end==0) {
             end = max(seg$pos[seg$chr==chr])
         } else if (is.null(gene)) {
@@ -33,17 +51,16 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
         }
     }
     
-    if (is.null(gene)) {
-        title = paste(chr,":",start,"-",end)
-    } else {
-        title = gene
-    }
-
     ## collect the points of interest
     pts = seg$pos>0
     if (chr!="0") {
         pts = pts & seg$chr==chr & seg$pos>=start & seg$pos<=end
     }
+    if (minMAF>0.0) {
+        pts = pts & seg$MAF>minMAF
+    }
+
+    numLoci = length(seg$pos[pts])
 
     ## significant points
     ptsSig = pts & seg$p<pSig & !is.na(seg$p)
@@ -65,57 +82,55 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
     }
     ylim = c(ymin, ymax)
 
-    ## plot
-    if (chr=="0") {
-        plot(seg$mlog10p[pts],
-             xlab=paste("All Chromosomes"),
-             ylab="-log10(p)",
-             ylim=ylim,
-             main=deparse(substitute(seg)),
-             pch=1, cex=0.3, col="black")
-    } else {
-        numLoci = length(seg$pos[pts])
-        plot(seg$pos[pts], seg$mlog10p[pts],
-             xlab=paste("Chr",chr,"position"),
-             ylab="-log10(p)",
-             xlim=xlim,
-             ylim=ylim,
-             ## main=paste(deparse(substitute(seg)),chr,":",start,"-",end),
-             main=paste(title," (",numLoci," loci, ",ptsSigNum,"<",pSig,", ",ptsHighNum,"<1e-2)", sep=""),
-             pch=1, cex=0.8, col="black")
-        ## use different symbol for infinite points
-        points(seg$pos[ptsInf], seg$mlog10p[ptsInf], pch=17, cex=1.5, col=sigColor)
+    ## plot title
+    if (is.null(gene) && is.null(title)) {
+        title = paste(chr,":",start,"-",end, numLoci,"loci","MAF >",minMAF,"N(p<5e-8) =",ptsSigNum,"N(p<0.01) =",ptsHighNum)
+    } else if (is.null(title)) {
+        title = paste(gene, numLoci,"loci","MAF >",minMAF,"N(p<5e-8) =",ptsSigNum,"N(p<0.01) =",ptsHighNum)
     }
 
-    ## vertical chromosome lines if plotting full genome
-    if (chr=="0") {
-        segpts = seg[pts,]
-        currentChr = "0"
-        for (i in 1:nrow(segpts)) {
-            if (segpts$chr[i]!=currentChr) {
-                currentChr = segpts$chr[i]
-                lines(c(i,i), ylim, lwd=1, col="gray")
-                text(i, ylim[2], currentChr, cex=0.5)
-            }
-        }
-    }
+    ## plot
+    plot(seg$pos[pts], seg$mlog10p[pts],
+         xlab=paste("Chr",chr,"position"),
+         ylab="-log10(p)",
+         xlim=xlim,
+         ylim=ylim,
+         pch=1, cex=0.8, col="black",
+         ## main=paste(deparse(substitute(seg)),chr,":",start,"-",end)
+         main = title
+         )
+    ## use different symbol for infinite points
+    points(seg$pos[ptsInf], seg$mlog10p[ptsInf], pch=17, cex=1.5, col=sigColor)
+
+    ## ## vertical chromosome lines if plotting full genome
+    ## if (chr=="0") {
+    ##     segpts = seg[pts,]
+    ##     currentChr = "0"
+    ##     for (i in 1:nrow(segpts)) {
+    ##         if (segpts$chr[i]!=currentChr) {
+    ##             currentChr = segpts$chr[i]
+    ##             lines(c(i,i), ylim, lwd=1, col="gray")
+    ##             text(i, ylim[2], currentChr, cex=0.5)
+    ##         }
+    ##     }
+    ## }
 
     ## highlight somewhat significant p values
     points(seg$pos[ptsHigh], seg$mlog10p[ptsHigh], pch=1, cex=0.8, col=sigColor)
-    
 
     ## highlight highly significant p values
-    if (hasSig && chr=="0") {
-        points(as.numeric(rownames(seg)[ptsSig]), seg$mlog10p[ptsSig], pch=19, cex=0.9, col=sigColor)
-    } else if (hasSig) {
-        points(seg$pos[ptsSig], seg$mlog10p[ptsSig], pch=19, cex=0.9, col=sigColor)
-    }
+    points(seg$pos[ptsSig], seg$mlog10p[ptsSig], pch=19, cex=0.9, col=sigColor)
+
+    ## highlight loci in the posList
+    ptsPosList = seg$pos %in% posList
+    points(seg$pos[ptsPosList], seg$mlog10p[ptsPosList], pch=19, cex=0.9, col=listColor)
+    text(seg$pos[ptsPosList], seg$mlog10p[ptsPosList], seg$id[ptsPosList], col=listColor, pos=4, cex=0.8, offset=0.3)
 
     ## line at pSig
     ## lines(xlim, -log10(c(pSig,pSig)), col="gray", lty=2)
 
     ## label significant points if requested
-    if (hasSig && chr!="0" && label) {
+    if (hasSig && label) {
         ## snpInfo = c()
         ## for (rsId in seg$id[ptsSig]) {
         ##     clinvar.clinsig = ""
@@ -151,12 +166,12 @@ plot.p.region = function(seg=seg, chr="0", start=0, end=0, gene=NULL, label=FALS
 
         ## if (length(snpInfo)>0) textStr = paste(textStr, snpInfo)
         
-        text(seg$pos[ptsSig], seg$mlog10p[ptsSig], textStr, col=sigColor, pos=4, cex=1.0, offset=0.3)
+        text(seg$pos[ptsSig], seg$mlog10p[ptsSig], textStr, col=sigColor, pos=4, cex=0.8, offset=0.3)
     }
 
     ## show gene or genes if requested
     ## REQUIRES load-genes!!
-    ypos = par("yaxp")[1]
+    ypos = par("yaxp")[2]
     bar = c(ypos-(ymax-ymin)*0.01, ypos+(ymax-ymin)*0.01)
     ## if (!is.null(gene)) {
     ##     lines(xlim, c(ypos,ypos))

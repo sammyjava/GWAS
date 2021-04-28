@@ -1,9 +1,14 @@
 ##
 ## read the segregation data from a txt or txt.gz file
-##
-## contig start id genotypeString caseString controlString noCallCount statistic p
+## chr    pos      id          genotypes         MAF               noCalls caseString    controlString statistic           p
+## 6      25726329 rs112943240 C/C|C/CTT|CTT/CTT 0.307875605815832 0       2330|2126|513 3012|2676|557 -1.4112760160634399 0.1581632435465825
+## chr  pos     id          genotypes               caseString    controlstring  noCalls  statistic          p   
+## 1	866511	rs60722469  CCCCT/CCCCT|C/CCCCT|C/C 2450|2115|401 3059|2670|513  6        0.3458728500395499 0.7294382733518878
 read.seg = function(file="seg.txt.gz") {
     seg = read.table(file=file, header=F, sep="\t")
+    ## new
+    ## colnames(seg) = c("chr","pos","id","genotypes","MAF","noCalls","caseString","controlString","statistic","p")
+    ## old
     colnames(seg) = c("chr","pos","id","genotypes","caseString","controlString","noCalls","statistic","p")
     ## store the number of genotypes, 2=SNP without ALT HOM so we can compute odds ratio
     seg$ngenotypes = 0

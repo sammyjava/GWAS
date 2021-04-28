@@ -4,7 +4,7 @@
 
 library(ape)
 
-gffFile = "/home/shokin/genomes/Human/Homo_sapiens.GRCh37.87.chr.gff3"
+gffFile = "/home/shokin/genomes/Human/Homo_sapiens.GRCh37.87.chr.gff3.gz"
 
 ## load GFF files
 print("Loading GFF...", quote=F)
